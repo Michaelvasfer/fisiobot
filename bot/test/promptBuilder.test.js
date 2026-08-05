@@ -7,12 +7,11 @@ test('el system prompt no contiene placeholders sin reemplazar', () => {
   assert.ok(!/\{\{[A-Z_]+\}\}/.test(prompt), `Placeholder sin reemplazar: ${prompt.match(/\{\{[A-Z_]+\}\}/)}`);
 });
 
-test('incluye los datos de identidad del consultorio', () => {
+test('incluye los datos de identidad del centro', () => {
   const prompt = construirSystemPrompt();
-  assert.ok(prompt.includes('Dr. Michael Vásquez Fernández'));
-  assert.ok(prompt.includes('Ortopedia y Traumatología'));
-  assert.ok(prompt.includes('Av. Mario Urteaga 555'));
-  assert.ok(prompt.includes('S/ 100'));
+  assert.ok(prompt.includes('Fisioterapia y Rehabilitación'));
+  assert.ok(prompt.includes('Cajamarca'));
+  assert.ok(prompt.includes('S/ 50'));
 });
 
 test('los cupos no van en el prompt (se obtienen con la herramienta) y el modo de agenda es manual', () => {
@@ -41,7 +40,7 @@ test('sin campañas registradas el prompt lo indica explícitamente', () => {
 
 test('el saludo configurado se inyecta y no dice "asistente virtual" en el saludo', () => {
   const prompt = construirSystemPrompt();
-  assert.ok(prompt.includes('Soy el asistente del consultorio del Dr. Michael Vásquez'));
+  assert.ok(prompt.includes('asistente del centro de fisioterapia'));
   assert.ok(!prompt.includes('Soy el asistente virtual del consultorio'));
 });
 
