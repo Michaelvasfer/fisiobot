@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d9488" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Consultorio" />
+  <link rel="manifest" href="/admin/manifest.webmanifest" crossorigin="use-credentials" />
+  <link rel="icon" type="image/png" href="/admin/pwa/icon-192.png" />
+  <link rel="apple-touch-icon" href="/admin/pwa/icon-192.png" />
+  <title>Panel del consultorio — Configuración del agente</title>
+  <style>
+    :root {
+      --acento: #0d9488;
+      --acento-oscuro: #0f766e;
+      --acento-suave: #f0fdfa;
+      --acento-borde: #99f6e4;
+      --texto: #111827;
+      --texto-sec: #6b7280;
+      --borde: #e5e7eb;
+      --fondo: #f4f6f8;
+      --peligro: #dc2626;
+      --peligro-suave: #fef2f2;
+      --sombra: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .08);
+      --radio: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    body { font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: var(--texto); padding-bottom: 90px; }
+    header { background: #fff; border-bottom: 1px solid var(--borde); padding: 18px 24px; }
+    header h1 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+    header h1::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 3px; background: var(--acento); margin-right: 8px; }
+    header small { color: var(--texto-sec); font-size: 13px; }
+    main { max-width: 760px; margin: 24px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 16px; }
+    section, .tarjeta { background: #fff; border-radius: var(--radio); padding: 20px; box-shadow: var(--sombra); border: 1px solid var(--borde); }
+    h2 { font-size: 14.5px; margin-bottom: 14px; color: var(--texto); font-weight: 650; display: flex; align-items: center; gap: 8px; }
+    h2::before { content: ''; width: 4px; height: 15px; border-radius: 2px; background: var(--acento); }
+    .fila { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .fila label, .etiqueta { font-size: 12.5px; color: var(--texto-sec); font-weight: 550; }
+    .fila input, .fila textarea, .cupo-fecha input { padding: 9px 11px; border: 1px solid var(--borde); border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; transition: border-color .15s, box-shadow .15s; }
+    .fila input:focus, .fila textarea:focus, .cupo-fecha input:focus { outline: none; border-color: var(--acento); box-shadow: 0 0 0 3px rgba(13, 148, 136, .15); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ayuda { font-size: 12.5px; color: var(--texto-sec); margin-bottom: 12px; line-height: 1.5; background: #f9fafb; border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .check input[type="checkbox"] { accent-color: var(--acento); width: 16px; height: 16px; }
+
+    /* Selector de cupos con casillas */
+    .cupo { border: 1px solid var(--borde); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #fbfbfc; }
+    .cupo-fecha { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .cupo-fecha input[type="text"] { flex: 2; min-width: 200px; }
+    .cupo-fecha input[type="date"] { flex: 0 0 auto; padding: 8px; border: 1px solid var(--borde); border-radius: 8px; }
+    .cupo-fecha button, .quitar-campania { background: var(--peligro-suave); color: var(--peligro); border: none; border-radius: 8px; padding: 9px 12px; cursor: pointer; font-weight: 550; transition: background .15s; }
+    .cupo-fecha button:hover, .quitar-campania:hover { background: #fee2e2; }
+    .rapidos { display: flex; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+    .rapidos button { background: var(--acento-suave); color: var(--acento-oscuro); border: none; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 550; cursor: pointer; transition: background .15s; }
+    .rapidos button:hover { background: var(--acento-borde); }
+    .horas { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hora-chip { display: flex; align-items: center; gap: 4px; border: 1px solid var(--borde); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; user-select: none; background: #fff; transition: all .12s; }
+    .hora-chip:hover { border-color: var(--acento); }
+    .hora-chip.activa { background: var(--acento); color: #fff; border-color: var(--acento); }
+    .hora-chip input { display: none; }
+
+    .agregar { background: var(--acento-suave); color: var(--acento-oscuro); border: 1.5px dashed var(--acento); border-radius: 10px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background .15s; }
+    .agregar:hover { background: var(--acento-borde); }
+    .tarjeta { margin-bottom: 12px; }
+    .tarjeta .cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+    .tarjeta .cabecera .check { font-weight: 600; }
+
+    #barra { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, .92); backdrop-filter: blur(8px); border-top: 1px solid var(--borde); padding: 12px 20px; display: flex; align-items: center; gap: 14px; justify-content: center; z-index: 10; }
+    #guardar { background: var(--acento); color: #fff; border: none; border-radius: 10px; padding: 12px 34px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s, transform .1s; }
+    #guardar:hover { background: var(--acento-oscuro); }
+    #guardar:active { transform: scale(.98); }
+    #guardar:disabled { background: #9ca3af; cursor: default; }
+    #mensaje { font-size: 14px; }
+    #mensaje.ok { color: var(--acento-oscuro); }
+    #mensaje.error { color: var(--peligro); }
+
+    /* Pestañas */
+    #tabs { display: flex; background: #fff; border-bottom: 1px solid var(--borde); }
+    #tabs button { flex: 1; max-width: 200px; padding: 13px 12px; background: none; border: none; border-bottom: 3px solid transparent; font-size: 14px; cursor: pointer; color: var(--texto-sec); font-weight: 550; transition: color .15s; }
+    #tabs button:hover { color: var(--texto); }
+    #tabs button.activa { color: var(--acento-oscuro); border-bottom-color: var(--acento); font-weight: 650; }
+
+    /* Vista de conversaciones */
+    #vistaChats { max-width: 960px; margin: 24px auto; padding: 0 16px; display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 700px) { #vistaChats { grid-template-columns: 1fr; } }
+    #listaChats { background: #fff; border-radius: var(--radio); box-shadow: var(--sombra); border: 1px solid var(--borde); overflow: hidden; }
+    .chat-item { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background .12s; }
+    .chat-item:hover { background: #f9fafb; }
+    .chat-item.sel { background: var(--acento-suave); box-shadow: inset 3px 0 0 var(--acento); }
+    .chat-item .tel { font-size: 14px; font-weight: 600; }
+    .chat-item .prev { font-size: 12px; color: var(--texto-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item .meta { font-size: 11px; margin-top: 3px; color: var(--texto-sec); }
+    .badge { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 550; background: #f3f4f6; color: #4b5563; }
+    .badge.pausa { background: #fef3c7; color: #92400e; }
+    /* Filtros de seguimiento sobre la lista de chats */
+    .chip-filtro { background: #fff; border: 1px solid var(--borde); border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 550; cursor: pointer; color: var(--texto-sec); transition: all .12s; }
+    .chip-filtro:hover { border-color: var(--acento); color: var(--acento-oscuro); }
+    .chip-filtro.activo { background: var(--acento); color: #fff; border-color: var(--acento); }
+    #hilo { background: #fff; border-radius: var(--radio); box-shadow: var(--sombra); border: 1px solid var(--borde); display: flex; flex-direction: column; min-height: 400px; overflow: hidden; }
+    #hiloCabecera { padding: 12px 16px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #hiloCabecera .tel { font-weight: 650; font-size: 14.5px; }
+    #btnPausa { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 550; cursor: pointer; transition: all .15s; }
+    #btnPausa.reanudar { background: var(--acento-suave); color: var(--acento-oscuro); border-color: var(--acento); }
+    #mensajes { flex: 1; overflow-y: auto; max-height: 480px; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .burbuja { max-width: 78%; padding: 8px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+    .burbuja.paciente { background: #fff; border: 1px solid var(--borde); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .burbuja.bot { background: var(--acento); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .burbuja.bot .hora { color: rgba(255, 255, 255, .75); }
+    .burbuja.manual { background: #eef2ff; color: #3730a3; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .burbuja .hora { display: block; font-size: 10px; color: #9ca3af; text-align: right; margin-top: 3px; }
+    #responder { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--borde); }
+    #responder input { flex: 1; padding: 10px 14px; border: 1px solid var(--borde); border-radius: 999px; font-size: 14px; outline: none; transition: border-color .15s, box-shadow .15s; }
+    #responder input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px rgba(13, 148, 136, .15); }
+    #responder button { background: var(--acento); color: #fff; border: none; border-radius: 999px; padding: 0 20px; font-weight: 600; cursor: pointer; transition: background .15s; }
+    #responder button:hover { background: var(--acento-oscuro); }
+    #avisoPausa { font-size: 12px; color: #92400e; background: #fffbeb; padding: 6px 14px; display: none; }
+    #sinChat { padding: 40px 30px; text-align: center; color: var(--texto-sec); font-size: 14px; line-height: 1.7; }
+    /* Botón "volver a la lista": solo visible en celular */
+    #btnVolver { display: none; background: #fff; border: 1px solid var(--borde); border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 550; cursor: pointer; color: var(--acento-oscuro); }
+
+    /* --- Ajustes para celular --- */
+    @media (max-width: 700px) {
+      .grid2 { grid-template-columns: 1fr; }
+      main { margin: 14px auto; padding: 0 10px; gap: 12px; }
+      section, .tarjeta { padding: 14px; }
+      /* 16px en inputs evita el zoom automático de iOS al enfocar */
+      .fila input, .fila textarea, .cupo-fecha input, #responder input, #buscadorChats { font-size: 16px; }
+      .hora-chip { padding: 7px 12px; font-size: 14px; }
+      .rapidos button { padding: 8px 12px; font-size: 13px; }
+      #guardar { padding: 14px 40px; font-size: 16px; width: 100%; max-width: 320px; }
+      #barra { flex-direction: column; gap: 6px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+      #tabs button { font-size: 13px; padding: 12px 8px; }
+      #mensajes { max-height: 55vh; }
+      #hiloCabecera { position: sticky; top: 0; background: #fff; z-index: 2; }
+      header { padding: 14px 16px; }
+      /* En celular: lista y conversación no se apilan; se muestra una u otra */
+      #btnVolver { display: inline-block; }
+      #vistaChats.chatAbierto #listaChats { display: none; }
+      #vistaChats:not(.chatAbierto) #hilo { display: none; }
+      /* Chat abierto: capa fija a pantalla completa. La página queda inmóvil
+         detrás y solo se desplazan los mensajes; se sale con "← Chats". */
+      body:has(#vistaChats.chatAbierto) { overflow: hidden; }
+      body:has(#vistaChats.chatAbierto) header,
+      body:has(#vistaChats.chatAbierto) #tabs { display: none; }
+      #vistaChats.chatAbierto { position: fixed; inset: 0; z-index: 20; margin: 0; padding: 0; background: #fff; display: block; }
+      #vistaChats.chatAbierto #hilo { height: 100vh; height: 100dvh; min-height: 0; border-radius: 0; box-shadow: none; border: none; }
+      #vistaChats.chatAbierto #hiloContenido { display: flex; flex-direction: column; height: 100%; }
+      #vistaChats.chatAbierto #mensajes { max-height: none; flex: 1 1 auto; min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Panel del consultorio</h1>
+    <small>Configuración del agente de WhatsApp — los cambios aplican de inmediato</small>
+  </header>
+  <nav id="tabs">
+    <button type="button" class="activa" data-tab="chats" onclick="cambiarTab('chats')">💬 Conversaciones</button>
+    <button type="button" data-tab="config" onclick="cambiarTab('config')">⚙️ Configuración</button>
+  </nav>
+  <main id="vistaConfig" hidden>
+    <section>
+      <h2>Identidad y consulta</h2>
+      <div class="grid2">
+        <div class="fila"><label>Médico</label><input id="medico" /></div>
+        <div class="fila"><label>Especialidad</label><input id="especialidad" /></div>
+        <div class="fila"><label>Ciudad</label><input id="ciudad" /></div>
+        <div class="fila"><label>Dirección</label><input id="direccion" /></div>
+        <div class="fila"><label>Precio de consulta</label><input id="precioConsulta" placeholder="S/ 100" /></div>
+        <div class="fila"><label>Duración de consulta</label><input id="duracionConsulta" placeholder="30 minutos" /></div>
+        <div class="fila"><label>Modalidad</label><input id="modalidad" placeholder="atención presencial" /></div>
+      </div>
+      <div class="check"><input type="checkbox" id="consultaVirtualHabilitada" /><label for="consultaVirtualHabilitada">Consulta virtual habilitada</label></div>
+      <div class="fila">
+        <label>Saludo inicial del agente (primer mensaje que envía)</label>
+        <textarea id="saludo" rows="3" placeholder="Hola 👋 Soy el asistente del consultorio..."></textarea>
+      </div>
+    </section>
+
+    <section>
+      <h2>Horario general de atención</h2>
+      <p class="ayuda">Referencia para el agente. Lo que realmente se ofrece al paciente son los <b>cupos disponibles</b> de abajo.</p>
+      <div class="grid2" id="horarios"></div>
+    </section>
+
+    <section>
+      <h2>Cupos disponibles (horario único)</h2>
+      <p class="ayuda">Elige la fecha con el calendario y <b>marca las horas</b> que quieres ofrecer. Es el único pool de horarios: lo comparten las consultas y las campañas (estas reservan horas de la fecha de su jornada). Si una hora se reserva, se bloquea para todos.</p>
+      <div id="cupos"></div>
+      <button class="agregar" type="button" onclick="agregarCupo(document.getElementById('cupos'))">+ Agregar día</button>
+    </section>
+
+    <section>
+      <h2>Campañas</h2>
+      <p class="ayuda">Jornadas con precio especial (todo incluido: evaluación + procedimiento). El bot solo ofrece campañas <b>ACTIVA</b> o <b>CUPOS LIMITADOS</b>; las demás las informa como no vigentes y ofrece la consulta habitual. Las horas de la jornada se toman de los <b>Cupos disponibles</b> de arriba: carga ahí las horas del día de la campaña.</p>
+      <div id="campanias"></div>
+      <button class="agregar" type="button" onclick="agregarCampania()">+ Agregar campaña</button>
+    </section>
+
+    <section>
+      <h2>Medios de pago</h2>
+      <p class="ayuda">Separados por comas. El agente nunca inventará cuentas ni números.</p>
+      <div class="fila"><input id="mediosDePago" placeholder="Efectivo, Yape, Plin" /></div>
+    </section>
+  </main>
+
+  <main id="vistaChats">
+    <div id="listaChats">
+      <div style="padding:10px 14px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:14px">Chats</strong>
+        <button type="button" id="btnNotif" onclick="alternarNotificaciones()" style="background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:550;cursor:pointer">🔔 Activar avisos</button>
+      </div>
+      <div style="padding:8px 10px;border-bottom:1px solid #eee">
+        <input id="buscadorChats" type="search" placeholder="🔍 Buscar por número o nombre" oninput="renderListaChats()" style="width:100%;padding:8px 10px;border:1px solid #ccd0d5;border-radius:6px;font-size:14px" />
+      </div>
+      <div style="padding:8px 10px;border-bottom:1px solid #eee;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+        <button type="button" class="chip-filtro activo" data-filtro="todos" data-label="Todos" onclick="ponerFiltro('todos')">Todos</button>
+        <button type="button" class="chip-filtro" data-filtro="porConfirmar" data-label="⏳ Por confirmar" onclick="ponerFiltro('porConfirmar')">⏳ Por confirmar</button>
+        <button type="button" class="chip-filtro" data-filtro="agendados" data-label="✅ Agendados" onclick="ponerFiltro('agendados')">✅ Agendados</button>
+        <button type="button" class="chip-filtro" data-filtro="interesados" data-label="🔥 Interesados" onclick="ponerFiltro('interesados')">🔥 Interesados</button>
+        <button type="button" class="chip-filtro" data-filtro="campania" data-label="📢 Campaña" onclick="ponerFiltro('campania')">📢 Campaña</button>
+        <select id="filtroCampania" onchange="renderListaChats()" style="padding:5px 10px;border:1px solid #e5e7eb;border-radius:999px;font-size:12px;color:#6b7280;background:#fff">
+          <option value="">Todas las campañas</option>
+        </select>
+      </div>
+      <div id="itemsChats">
+        <div class="chat-item" style="cursor:default;color:#888">Cargando conversaciones…</div>
+      </div>
+    </div>    <div id="hilo">
+      <div id="sinChat">Selecciona una conversación para ver el historial.<br />Desde aquí puedes pausar el bot y responder tú mismo.</div>
+      <div id="hiloContenido" hidden>
+        <div id="hiloCabecera">
+          <button type="button" id="btnVolver" onclick="cerrarChat()">← Chats</button>
+          <span class="tel" id="hiloTel"></span>
+          <button type="button" id="btnPausa" onclick="alternarPausa()">⏸ Pausar bot</button>
+        </div>
+        <div id="mensajes"></div>
+        <div id="avisoPausa">El bot está en pausa en este chat — tus mensajes llegan directo al paciente.</div>
+        <div id="responder">
+          <input id="textoManual" placeholder="Escribe tu respuesta al paciente…" />
+          <button type="button" onclick="enviarManual()">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="barra">
+    <button id="guardar" onclick="guardar()">Guardar cambios</button>
+    <span id="mensaje"></span>
+  </div>
+
+  <script>
+    const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+    // Genera las horas del día cada 30 minutos en el formato del bot: "7:00 a. m." … "8:00 p. m."
+    const HORAS_DIA = [];
+    for (let h = 7; h <= 20; h++) {
+      for (const m of [0, 30]) {
+        if (h === 20 && m === 30) continue;
+        const hora12 = h > 12 ? h - 12 : h;
+        const periodo = h < 12 ? 'a. m.' : 'p. m.';
+        HORAS_DIA.push(`${hora12}:${m === 0 ? '00' : '30'} ${periodo}`);
+      }
+    }
+
+    let config = null;
+
+    function mensaje(texto, tipo) {
+      const el = document.getElementById('mensaje');
+      el.textContent = texto;
+      el.className = tipo || '';
+      if (texto) setTimeout(() => { el.textContent = ''; }, 5000);
+    }
+
+    function renderHorarios(horarioGeneral) {
+      const cont = document.getElementById('horarios');
+      cont.innerHTML = '';
+      DIAS.forEach((dia) => {
+        const div = document.createElement('div');
+        div.className = 'fila';
+        div.innerHTML = `<label>${dia.charAt(0).toUpperCase() + dia.slice(1)}</label><input data-dia="${dia}" />`;
+        cont.appendChild(div);
+        div.querySelector('input').value = (horarioGeneral && horarioGeneral[dia]) || 'no disponible';
+      });
+    }
+
+    // --- Componente de selección de horas con casillas ---
+    function renderChips(contenedor, seleccionadas) {
+      contenedor.innerHTML = '';
+      HORAS_DIA.forEach((hora) => {
+        const activa = (seleccionadas || []).includes(hora);
+        const chip = document.createElement('label');
+        chip.className = 'hora-chip' + (activa ? ' activa' : '');
+        chip.innerHTML = `<input type="checkbox" ${activa ? 'checked' : ''} /> ${hora}`;
+        chip.dataset.hora = hora;
+        chip.onclick = (e) => {
+          e.preventDefault();
+          const inp = chip.querySelector('input');
+          inp.checked = !inp.checked;
+          chip.classList.toggle('activa', inp.checked);
+        };
+        contenedor.appendChild(chip);
+      });
+    }
+
+    function horasSeleccionadas(cupoEl) {
+      return [...cupoEl.querySelectorAll('.hora-chip input:checked')].map((i) => i.closest('.hora-chip').dataset.hora);
+    }
+
+    function marcarPorPrefijo(cupoEl, filtro) {
+      cupoEl.querySelectorAll('.hora-chip').forEach((chip) => {
+        const hora = chip.dataset.hora;
+        const marca = filtro === 'todas' ? true : filtro === 'ninguna' ? false : hora.endsWith(filtro);
+        chip.querySelector('input').checked = marca;
+        chip.classList.toggle('activa', marca);
+      });
+    }
+
+    // Convierte la fecha del calendario a texto en español: "miércoles 6 de agosto"
+    function fechaTextoDesdeInput(valorISO) {
+      if (!valorISO) return '';
+      const fecha = new Date(valorISO + 'T12:00:00');
+      return fecha.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function agregarCupo(contenedor, fecha, horas) {
+      const div = document.createElement('div');
+      div.className = 'cupo';
+      div.innerHTML = `
+        <div class="cupo-fecha">
+          <input type="text" class="fecha" placeholder="miércoles 6 de agosto" />
+          <input type="date" class="calendario" title="Elegir fecha" />
+          <div class="rapidos">
+            <button type="button" data-f="a. m.">Mañana</button>
+            <button type="button" data-f="p. m.">Tarde</button>
+            <button type="button" data-f="todas">Todas</button>
+            <button type="button" data-f="ninguna">Ninguna</button>
+          </div>
+          <button type="button" class="quitar" title="Quitar día">✕</button>
+        </div>
+        <div class="horas"></div>`;
+      contenedor.appendChild(div);
+      div.querySelector('.fecha').value = fecha || '';
+      div.querySelector('.calendario').onchange = (e) => {
+        div.querySelector('.fecha').value = fechaTextoDesdeInput(e.target.value);
+      };
+      div.querySelector('.quitar').onclick = () => div.remove();
+      div.querySelectorAll('.rapidos button').forEach((b) => {
+        b.onclick = () => marcarPorPrefijo(div, b.dataset.f);
+      });
+      renderChips(div.querySelector('.horas'), horas || []);
+      return div;
+    }
+
+    // --- Campañas ---
+    function agregarCampania(datos) {
+      const c = datos || { nombre: '', estado: 'ACTIVA', vigencia: '', precio: '', ofertas: [], articulaciones: [], instrucciones: '' };
+      const ESTADOS = ['ACTIVA', 'CUPOS_LIMITADOS', 'CUPOS_AGOTADOS', 'FINALIZADA', 'SUSPENDIDA'];
+      const estadoActual = c.estado || (c.activa ? 'ACTIVA' : 'SUSPENDIDA');
+      const cont = document.getElementById('campanias');
+      const div = document.createElement('div');
+      div.className = 'tarjeta campania';
+      div.innerHTML = `
+        <div class="cabecera">
+          <div class="fila" style="margin:0;min-width:220px">
+            <label>Estado de la campaña</label>
+            <select class="estado" style="padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px">
+              ${ESTADOS.map((e) => `<option value="${e}" ${e === estadoActual ? 'selected' : ''}>${e.replace(/_/g, ' ')}</option>`).join('')}
+            </select>
+          </div>
+          <button type="button" class="quitar-campania">Eliminar campaña</button>
+        </div>
+        <div class="grid2">
+          <div class="fila"><label>Nombre de la campaña</label><input class="nombre" placeholder="Plasma rico en plaquetas" value="${c.nombre || ''}" /></div>
+          <div class="fila"><label>Precio (todo incluido)</label><input class="precio" placeholder="S/ 250 por rodilla" value="${c.precio || ''}" /></div>
+        </div>
+        <div class="fila">
+          <label>Fecha de la jornada</label>
+          <div class="cupo-fecha">
+            <input type="text" class="vigencia" placeholder="sábado 30 de agosto" value="${c.vigencia || ''}" />
+            <input type="date" class="calendario" title="Elegir fecha" />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="fila"><label>Ofertas (una por línea)</label><textarea class="ofertas" rows="2" placeholder="Ambas rodillas S/ 400">${(c.ofertas || []).join('\n')}</textarea></div>
+          <div class="fila"><label>Articulaciones autorizadas (separadas por comas)</label><textarea class="articulaciones" rows="2" placeholder="rodilla">${(c.articulaciones || []).join(', ')}</textarea></div>
+        </div>
+        <div class="fila"><label>Instrucciones para el agente</label><textarea class="instrucciones" rows="2">${c.instrucciones || 'El precio de campaña incluye la evaluación y el procedimiento. No mencionar la consulta de S/ 100 a pacientes de esta campaña.'}</textarea></div>`;
+      cont.appendChild(div);
+      div.querySelector('.quitar-campania').onclick = () => div.remove();
+      div.querySelector('.calendario').onchange = (e) => {
+        div.querySelector('.vigencia').value = fechaTextoDesdeInput(e.target.value);
+      };
+      return div;
+    }
+
+    async function cargar() {
+      const res = await fetch('/admin/api/config');
+      if (!res.ok) { mensaje('No se pudo cargar la configuración', 'error'); return; }
+      config = await res.json();
+      const i = config.identidad || {};
+      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'duracionConsulta', 'modalidad', 'saludo']
+        .forEach((k) => { document.getElementById(k).value = i[k] || ''; });
+      document.getElementById('consultaVirtualHabilitada').checked = Boolean(i.consultaVirtualHabilitada);
+      renderHorarios(config.horarioGeneral);
+      const contCupos = document.getElementById('cupos');
+      contCupos.innerHTML = '';
+      (config.cuposDisponibles || []).forEach((cupo) => agregarCupo(contCupos, cupo.fecha, cupo.horas));
+      document.getElementById('campanias').innerHTML = '';
+      (config.campaniasActivas || []).forEach((camp) => agregarCampania(camp));
+      document.getElementById('mediosDePago').value = (config.mediosDePago || []).join(', ');
+    }
+
+    function recolectar() {
+      const identidad = { nombreAgente: config.identidad.nombreAgente, zonaHoraria: config.identidad.zonaHoraria };
+      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'duracionConsulta', 'modalidad', 'saludo']
+        .forEach((k) => { identidad[k] = document.getElementById(k).value.trim(); });
+      identidad.consultaVirtualHabilitada = document.getElementById('consultaVirtualHabilitada').checked;
+
+      const horarioGeneral = {};
+      document.querySelectorAll('#horarios input').forEach((inp) => { horarioGeneral[inp.dataset.dia] = inp.value.trim(); });
+
+      const cuposDisponibles = [...document.querySelectorAll('#cupos .cupo')]
+        .map((div) => ({ fecha: div.querySelector('.fecha').value.trim(), horas: horasSeleccionadas(div) }))
+        .filter((cupo) => cupo.fecha && cupo.horas.length > 0);
+
+      const campaniasActivas = [...document.querySelectorAll('#campanias .campania')]
+        .map((div) => ({
+          nombre: div.querySelector('.nombre').value.trim(),
+          estado: div.querySelector('.estado').value,
+          vigencia: div.querySelector('.vigencia').value.trim(),
+          precio: div.querySelector('.precio').value.trim(),
+          ofertas: div.querySelector('.ofertas').value.split('\n').map((o) => o.trim()).filter(Boolean),
+          articulaciones: div.querySelector('.articulaciones').value.split(',').map((a) => a.trim()).filter(Boolean),
+          instrucciones: div.querySelector('.instrucciones').value.trim(),
+        }))
+        .filter((camp) => camp.nombre);
+
+      const mediosDePago = document.getElementById('mediosDePago').value.split(',').map((m) => m.trim()).filter(Boolean);
+
+      return { identidad, horarioGeneral, cuposDisponibles, mediosDePago, campaniasActivas };
+    }
+
+    async function guardar() {
+      const boton = document.getElementById('guardar');
+      boton.disabled = true;
+      try {
+        const res = await fetch('/admin/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(recolectar()),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          config = recolectar();
+          mensaje('✅ Cambios guardados. El agente ya usa la nueva configuración.', 'ok');
+        } else {
+          mensaje(data.error || 'Error al guardar', 'error');
+        }
+      } catch {
+        mensaje('No se pudo contactar al servidor', 'error');
+      } finally {
+        boton.disabled = false;
+      }
+    }
+
+    // ============ Vista de conversaciones ============
+    let chatActual = null;
+    let chatHandoff = false;
+    let listaChatsCache = [];
+
+    function cambiarTab(tab) {
+      document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('activa', b.dataset.tab === tab));
+      document.getElementById('vistaConfig').hidden = tab !== 'config';
+      document.getElementById('vistaChats').hidden = tab !== 'chats';
+      document.getElementById('barra').style.display = tab === 'config' ? 'flex' : 'none';
+      if (tab === 'chats') cargarConversaciones();
+    }
+
+    async function cargarConversaciones() {
+      const res = await fetch('/admin/api/conversaciones');
+      listaChatsCache = (await res.json()).filter((c) => c.telefono !== 'webchat-local');
+      renderListaChats();
+    }
+
+    function escaparHtml(t) {
+      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // --- Filtros de seguimiento ---
+    let filtroChats = 'todos';
+    const FILTROS_CHATS = {
+      todos: () => true,
+      porConfirmar: (c) => c.citaPendiente,
+      agendados: (c) => c.citaConfirmada || c.estado === 'CITA_CONFIRMADA',
+      interesados: (c) => (c.interes === 'INTERES_ALTO' || c.interes === 'INTERES_MEDIO') && !c.citaPendiente && !c.citaConfirmada,
+      campania: (c) => Boolean(c.campania),
+    };
+    const BADGE_INTERES = {
+      INTERES_ALTO: '🔥 interés alto',
+      INTERES_MEDIO: 'interés medio',
+      INTERES_BAJO: 'interés bajo',
+      CASO_RECONSTRUCTIVO: '🦴 reconstructivo',
+      PACIENTE_OPERADO: 'paciente operado',
+    };
+
+    function ponerFiltro(filtro) {
+      filtroChats = filtro;
+      document.querySelectorAll('.chip-filtro').forEach((b) => b.classList.toggle('activo', b.dataset.filtro === filtro));
+      renderListaChats();
+    }
+
+    // Rellena el selector de campañas con las presentes en los datos (conserva la elegida).
+    function actualizarSelectorCampanias() {
+      const sel = document.getElementById('filtroCampania');
+      const elegida = sel.value;
+      const campanias = [...new Set(listaChatsCache.map((c) => c.campania).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">Todas las campañas</option>' + campanias.map((n) => `<option value="${escaparHtml(n)}">${escaparHtml(n)}</option>`).join('');
+      sel.value = campanias.includes(elegida) ? elegida : '';
+    }
+
+    // Dibuja la lista de chats aplicando el buscador (número o nombre) y el filtro de seguimiento.
+    function renderListaChats() {
+      const cont = document.getElementById('itemsChats');
+      cont.innerHTML = '';
+      actualizarSelectorCampanias();
+      // Conteos por grupo en cada chip.
+      document.querySelectorAll('.chip-filtro').forEach((b) => {
+        const n = listaChatsCache.filter(FILTROS_CHATS[b.dataset.filtro]).length;
+        b.textContent = `${b.dataset.label} (${n})`;
+      });
+      const consulta = (document.getElementById('buscadorChats').value || '').trim().toLowerCase();
+      const digitos = consulta.replace(/\D/g, '');
+      const campaniaElegida = document.getElementById('filtroCampania').value;
+      const pasaFiltro = FILTROS_CHATS[filtroChats] || FILTROS_CHATS.todos;
+      const visibles = listaChatsCache.filter((c) => {
+        if (!pasaFiltro(c)) return false;
+        if (campaniaElegida && c.campania !== campaniaElegida) return false;
+        if (!consulta) return true;
+        if (digitos && c.telefono.includes(digitos)) return true;
+        return (c.nombre || '').toLowerCase().includes(consulta);
+      });
+      if (visibles.length === 0) {
+        cont.innerHTML = `<div class="chat-item" style="cursor:default;color:#888">${listaChatsCache.length === 0 ? 'Aún no hay conversaciones.' : 'Ningún chat coincide con la búsqueda o el filtro.'}</div>`;
+        return;
+      }
+      visibles.forEach((c) => {
+        const div = document.createElement('div');
+        div.className = 'chat-item' + (chatActual === c.telefono ? ' sel' : '');
+        const hora = c.ultimaActividad ? new Date(c.ultimaActividad).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+        div.innerHTML = `
+          <div class="tel">${c.nombre ? escaparHtml(c.nombre) + ' · ' : ''}${c.telefono}</div>
+          ${c.motivo ? `<div class="prev" style="color:#0f766e">${escaparHtml(c.motivo)}</div>` : ''}
+          <div class="prev">${(c.ultimoRol === 'user' ? '' : '↩ ') }${c.ultimoMensaje}</div>
+          <div class="meta">${hora}
+            ${c.handoff ? '<span class="badge pausa">⏸ bot en pausa</span>' : ''}
+            ${c.citaPendiente ? '<span class="badge" style="background:#fee2e2;color:#b91c1c">⏳ cita por confirmar</span>' : ''}
+            ${c.citaConfirmada ? '<span class="badge" style="background:#d1fae5;color:#047857">✅ agendado</span>' : ''}
+            ${c.interes && BADGE_INTERES[c.interes] ? `<span class="badge">${BADGE_INTERES[c.interes]}</span>` : ''}
+            ${c.campania ? `<span class="badge">📢 ${escaparHtml(c.campania)}</span>` : ''}
+          </div>`;
+        div.onclick = () => seleccionarChat(c.telefono);
+        cont.appendChild(div);
+      });
+    }
+
+    async function seleccionarChat(telefono) {
+      chatActual = telefono;
+      document.getElementById('vistaChats').classList.add('chatAbierto');
+      const res = await fetch(`/admin/api/conversaciones/${telefono}`);
+      const conv = await res.json();
+      chatHandoff = Boolean(conv.handoff);
+      document.getElementById('sinChat').hidden = true;
+      document.getElementById('hiloContenido').hidden = false;
+      document.getElementById('hiloTel').textContent = telefono;
+      actualizarBotonPausa();
+      const cont = document.getElementById('mensajes');
+      // Al refrescar el chat abierto, solo bajar al final si ya estábamos abajo
+      // (o es la primera vez que se abre); si el usuario está leyendo arriba, no moverlo.
+      const esNuevoChat = cont.dataset.chat !== telefono;
+      const estabaAbajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
+      cont.dataset.chat = telefono;
+      cont.innerHTML = '';
+      conv.historial.forEach((m) => {
+        const div = document.createElement('div');
+        div.className = 'burbuja ' + (m.role === 'user' ? 'paciente' : m.manual ? 'manual' : 'bot');
+        const hora = m.ts ? new Date(m.ts).toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }) : '';
+        div.textContent = m.content.replace(/^\[Sistema:.*?\]\n\n/s, '');
+        if (m.manual) div.title = 'Enviado manualmente por recepción';
+        if (hora) {
+          const span = document.createElement('span');
+          span.className = 'hora';
+          span.textContent = hora;
+          div.appendChild(span);
+        }
+        cont.appendChild(div);
+      });
+      if (esNuevoChat || estabaAbajo) cont.scrollTop = cont.scrollHeight;
+      cargarConversaciones();
+    }
+
+    // Vuelve a la lista de chats (en celular la conversación ocupa toda la vista).
+    function cerrarChat() {
+      chatActual = null;
+      chatHandoff = false;
+      delete document.getElementById('mensajes').dataset.chat;
+      document.getElementById('vistaChats').classList.remove('chatAbierto');
+      document.getElementById('hiloContenido').hidden = true;
+      document.getElementById('sinChat').hidden = false;
+      cargarConversaciones();
+    }
+
+    function actualizarBotonPausa() {
+      const btn = document.getElementById('btnPausa');
+      btn.textContent = chatHandoff ? '▶ Reanudar bot' : '⏸ Pausar bot';
+      btn.classList.toggle('reanudar', chatHandoff);
+      document.getElementById('avisoPausa').style.display = chatHandoff ? 'block' : 'none';
+    }
+
+    async function alternarPausa() {
+      if (!chatActual) return;
+      const nuevo = !chatHandoff;
+      const res = await fetch(`/admin/api/conversaciones/${chatActual}/handoff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: nuevo }),
+      });
+      if (res.ok) {
+        chatHandoff = nuevo;
+        actualizarBotonPausa();
+        cargarConversaciones();
+      }
+    }
+
+    async function enviarManual() {
+      const input = document.getElementById('textoManual');
+      const texto = input.value.trim();
+      if (!texto || !chatActual) return;
+      input.disabled = true;
+      const res = await fetch(`/admin/api/conversaciones/${chatActual}/mensaje`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto }),
+      });
+      input.disabled = false;
+      if (res.ok) {
+        input.value = '';
+        // Sugerir pausar el bot si no está en pausa (intervención humana).
+        if (!chatHandoff) await alternarPausa();
+        seleccionarChat(chatActual);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'No se pudo enviar el mensaje.');
+      }
+    }
+
+    document.getElementById('textoManual').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') enviarManual();
+    });
+
+    // ============ Notificaciones push ============
+    function base64AUint8(base64) {
+      const relleno = '='.repeat((4 - (base64.length % 4)) % 4);
+      const b64 = (base64 + relleno).replace(/-/g, '+').replace(/_/g, '/');
+      return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    }
+
+    async function obtenerSuscripcion() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+      // getRegistration no cuelga: si el SW no está activo devuelve undefined.
+      const reg = await navigator.serviceWorker.getRegistration('/admin/');
+      return reg ? reg.pushManager.getSubscription() : null;
+    }
+
+    async function actualizarBotonNotif() {
+      const btn = document.getElementById('btnNotif');
+      if (!('Notification' in window)) { btn.textContent = '🔕 No soportado'; btn.disabled = true; return; }
+      if (Notification.permission === 'denied') { btn.textContent = '🔕 Bloqueadas'; btn.disabled = true; return; }
+      const sus = await obtenerSuscripcion().catch(() => null);
+      btn.textContent = sus ? '🔔 Avisos activos' : '🔔 Activar avisos';
+    }
+
+    async function alternarNotificaciones() {
+      const btn = document.getElementById('btnNotif');
+      try {
+        const susActual = await obtenerSuscripcion();
+        if (susActual) {
+          // Desactivar.
+          await fetch('/admin/api/push/desuscribir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: susActual.endpoint }),
+          });
+          await susActual.unsubscribe();
+          actualizarBotonNotif();
+          return;
+        }
+        const permiso = await Notification.requestPermission();
+        if (permiso !== 'granted') { actualizarBotonNotif(); return; }
+        const respClave = await fetch('/admin/api/push/clave-publica');
+        if (!respClave.ok) throw new Error('clave pública: el servidor respondió ' + respClave.status);
+        const { clave } = await respClave.json();
+        if (!clave) { alert('El servidor no tiene configuradas las claves push.'); return; }
+        // Registra el service worker si aún no existe; nunca esperar a "ready" (puede no resolverse nunca).
+        let reg = await navigator.serviceWorker.getRegistration('/admin/');
+        if (!reg) reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' });
+        const sus = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64AUint8(clave) });
+        const respSus = await fetch('/admin/api/push/suscribir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sus),
+        });
+        if (!respSus.ok) throw new Error('registro en el servidor: respondió ' + respSus.status);
+        btn.textContent = '🔔 Avisos activos';
+        alert('Listo: recibirás un aviso cuando llegue un mensaje nuevo al bot.');
+      } catch (err) {
+        console.error(err);
+        alert('No se pudieron activar las notificaciones en este dispositivo: ' + err.message);
+      }
+    }
+
+    actualizarBotonNotif();
+
+    // Refresca la lista cada 20 s cuando la pestaña de chats está visible.
+    setInterval(() => {
+      if (!document.getElementById('vistaChats').hidden) {
+        cargarConversaciones();
+        if (chatActual) seleccionarChat(chatActual);
+      }
+    }, 20000);
+
+    // Registro del service worker (PWA instalable).
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' }).catch(() => {});
+    }
+
+    // La pestaña inicial es Conversaciones.
+    document.getElementById('barra').style.display = 'none';
+    cargar();
+    cargarConversaciones();
+
+    // Si se llega desde una notificación push (?chat=<telefono>), abrir esa conversación directo.
+    const chatInicial = new URLSearchParams(location.search).get('chat');
+    if (chatInicial) {
+      cambiarTab('chats');
+      seleccionarChat(chatInicial);
+    }
+  </script>
+</body>
+</html>

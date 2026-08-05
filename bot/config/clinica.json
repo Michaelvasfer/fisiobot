@@ -1,0 +1,31 @@
+{
+  "identidad": {
+    "nombreAgente": "Asistente Virtual del Centro de Fisioterapia",
+    "zonaHoraria": "America/Lima",
+    "medico": "el equipo de fisioterapia",
+    "especialidad": "Fisioterapia y Rehabilitación",
+    "ciudad": "Cajamarca, Perú",
+    "direccion": "EDITAR: dirección del centro de fisioterapia",
+    "precioConsulta": "S/ 50",
+    "duracionConsulta": "45 minutos",
+    "modalidad": "atención presencial",
+    "saludo": "Hola, soy el asistente del centro de fisioterapia y rehabilitación.\n\n¿En qué parte del cuerpo presenta molestia o qué tipo de terapia está buscando?",
+    "consultaVirtualHabilitada": false
+  },
+  "horarioGeneral": {
+    "lunes": "no disponible",
+    "martes": "no disponible",
+    "miercoles": "no disponible",
+    "jueves": "no disponible",
+    "viernes": "no disponible",
+    "sabado": "no disponible",
+    "domingo": "no disponible"
+  },
+  "cuposDisponibles": [],
+  "mediosDePago": [
+    "Efectivo",
+    "Yape",
+    "Plin"
+  ],
+  "campaniasActivas": []
+}

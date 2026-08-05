@@ -1,0 +1,30 @@
+{
+  "activo": true,
+  "pasos": [
+    {
+      "id": "step-1",
+      "activo": true,
+      "delay": 120,
+      "delayLabel": "2 horas",
+      "mensaje": "¿Sigue ahí? 😊 Si necesita ayuda para agendar su cita, estoy aquí para asistirle."
+    },
+    {
+      "id": "step-2",
+      "activo": true,
+      "delay": 1440,
+      "delayLabel": "1 día",
+      "mensaje": "Hola de nuevo 🙋 Recuerdo que estábamos conversando sobre su cita. ¿Le gustaría continuar?"
+    },
+    {
+      "id": "step-3",
+      "activo": false,
+      "delay": 4320,
+      "delayLabel": "3 días",
+      "mensaje": "No quiero molestarle, solo quería recordarle que puede agendar su cita cuando lo desee. ¡Estaré aquí! 🏥"
+    }
+  ],
+  "maxReintentos": 3,
+  "pausaNocturna": true,
+  "horaInicio": "08:00",
+  "horaFin": "22:00"
+}

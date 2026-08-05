@@ -1,0 +1,41 @@
+:81 {
+	@transform_port_query {
+		query XTransformPort=*
+	}
+
+	handle @transform_port_query {
+		reverse_proxy localhost:{query.XTransformPort} {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Bot de WhatsApp (Express, puerto 3101): webhook de Meta, health check,
+	# panel de administración y chat de prueba
+	handle /webhook* {
+		reverse_proxy localhost:3101
+	}
+
+	handle /health* {
+		reverse_proxy localhost:3101
+	}
+
+	handle /admin* {
+		reverse_proxy localhost:3101
+	}
+
+	handle /chat/* {
+		reverse_proxy localhost:3101
+	}
+
+	handle {
+		reverse_proxy localhost:3000 {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}

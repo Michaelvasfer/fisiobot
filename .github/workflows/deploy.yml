@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy al servidor por SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e
+            PROJECT_DIR=$(find /root /home /opt /srv /var/www -maxdepth 3 -name deploy-agenteconsultorio.sh 2>/dev/null | head -1 | xargs -r dirname)
+            if [ -z "$PROJECT_DIR" ]; then
+              echo "❌ No se encontró deploy-agenteconsultorio.sh en el servidor."
+              echo "Contenido de /root, /home, /opt y /srv:"
+              ls -la /root /home /opt /srv 2>/dev/null || true
+              exit 1
+            fi
+            echo "→ Proyecto encontrado en: $PROJECT_DIR"
+            cd "$PROJECT_DIR"
+            # Primero el pull: así el script de deploy que se ejecuta
+            # es siempre el de esta versión, no el viejo del servidor.
+            git pull --autostash origin main
+            bash deploy-agenteconsultorio.sh "$PROJECT_DIR"
