@@ -243,7 +243,7 @@ export function ConversationsView() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div>
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -369,7 +369,7 @@ export function ConversationsView() {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className="space-y-3 max-w-2xl mx-auto">
                 {chatLoading ? (
                   <div className="flex items-center justify-center py-16">
