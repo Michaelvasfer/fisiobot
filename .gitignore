@@ -77,3 +77,4 @@ worklog.md
 !/bot/.env.example
 # npm (el proyecto usa bun.lock; este lockfile es solo local)
 package-lock.json
+bot/config/clinica.json
