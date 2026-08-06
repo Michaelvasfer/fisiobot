@@ -212,6 +212,12 @@ function plantillaActiva() {
   return ag && Array.isArray(ag.bloques) ? ag : null;
 }
 
+// Días puntuales cerrados (feriados, cierres): lista de fechas en
+// clinica.json → agenda.diasCerrados (texto "14 de agosto" o ISO).
+function estaCerrado(ag, fechaTexto) {
+  return (ag.diasCerrados || []).some((f) => mismaFecha(f, fechaTexto));
+}
+
 function disponibilidadPlantilla(store) {
   const ag = plantillaActiva();
   if (!ag) return null;
@@ -224,6 +230,7 @@ function disponibilidadPlantilla(store) {
     const fecha = new Date(ahora.anio, ahora.mes - 1, ahora.dia + d);
     if (!(ag.diasSemana || []).includes(fecha.getDay())) continue;
     const fechaTexto = fechaTextoDe(fecha);
+    if (estaCerrado(ag, fechaTexto)) continue;
     const horas = [];
     for (const b of ag.bloques) {
       for (let t = aMinutos24(b.inicio); t + dur <= aMinutos24(b.fin); t += paso) {
@@ -280,6 +287,7 @@ function cupoValido(fecha, hora, store) {
   if (ag) {
     const fechaObj = fechaCupo(fecha);
     if (!fechaObj || !(ag.diasSemana || []).includes(fechaObj.getDay())) return false;
+    if (estaCerrado(ag, fechaTextoDe(fechaObj))) return false;
     const t = horaEnMinutos(hora);
     if (t === null) return false;
     const dur = ag.duracionSesionMin || 60;

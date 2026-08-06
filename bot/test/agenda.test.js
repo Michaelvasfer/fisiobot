@@ -378,3 +378,19 @@ test('sesiones traslapadas cuentan para la capacidad (30 min sí, 60 min no)', a
     restaurar();
   }
 });
+
+test('un día cerrado no se ofrece ni se puede reservar', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const disp1 = await agenda.consultarDisponibilidad(store);
+    const dia = disp1.cupos[0];
+    // Cerrar ese día y re-consultar.
+    config.clinica.agenda.diasCerrados = [dia.fecha];
+    const disp2 = await agenda.consultarDisponibilidad(store);
+    assert.ok(!disp2.cupos.some((c) => c.fecha === dia.fecha));
+    assert.strictEqual(agenda.cupoValido(dia.fecha, dia.horas[0], store), false);
+  } finally {
+    restaurar();
+  }
+});

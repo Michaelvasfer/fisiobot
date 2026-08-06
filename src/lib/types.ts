@@ -92,6 +92,15 @@ export interface ClinicaConfig {
     saludo: string
   }
   horarioGeneral?: Record<string, string>
+  agenda?: {
+    diasSemana?: number[]
+    bloques?: { inicio: string; fin: string }[]
+    duracionSesionMin?: number
+    intervaloTurnoMin?: number
+    capacidadParalela?: number
+    diasAdelante?: number
+    diasCerrados?: string[]
+  }
   cuposDisponibles: CupoDia[]
   mediosDePago: string[]
   campaniasActivas: Campania[]

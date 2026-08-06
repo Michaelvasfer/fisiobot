@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Save, RotateCcw, Building2, Clock, CreditCard, Megaphone, Bot, MessageCircle } from 'lucide-react'
 import { SlotManager } from './slot-manager'
+import { DiasCerrados } from './dias-cerrados'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -221,6 +222,19 @@ export function ConfigView() {
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Días cerrados */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+        <DiasCerrados
+          dias={config.agenda?.diasCerrados ?? []}
+          onChange={(nuevos) =>
+            setConfig(prev => prev ? ({
+              ...prev,
+              agenda: { ...(prev.agenda ?? {}), diasCerrados: nuevos },
+            }) : prev)
+          }
+        />
       </motion.div>
 
       {/* Slot Manager - Interactive */}
