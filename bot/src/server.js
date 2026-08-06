@@ -142,7 +142,31 @@ async function procesarMensajeEntrante(mensaje, value) {
 
   await whatsapp.mostrarEscribiendo(mensaje.id).catch(() => {});
 
-  // 3) Contenido no textual: responder según la sección 22 del prompt.
+  // 3) Audio de voz: se transcribe con Whisper y sigue el flujo normal.
+  if (mensaje.type === 'audio' && mensaje.audio && mensaje.audio.id) {
+    let transcripcion = null;
+    try {
+      const media = await whatsapp.descargarMedia(mensaje.audio.id);
+      const { transcribirAudio } = require('./transcribir');
+      transcripcion = await transcribirAudio(media.buffer, media.extension);
+    } catch (err) {
+      console.error('[audio] No se pudo descargar/transcribir:', err.message);
+    }
+    if (transcripcion) {
+      console.log(`[audio] ${telefono} transcrito: ${transcripcion.slice(0, 120)}`);
+      const respuesta = await procesarMensaje(
+        telefono,
+        transcripcion,
+        store,
+        'El paciente envió una nota de voz; el texto es la transcripción aproximada del audio (puede tener errores menores). Responde a su contenido con naturalidad.'
+      );
+      if (respuesta) await responderHumano(telefono, respuesta);
+      return;
+    }
+    // Si falla la transcripción, cae al aviso clásico de la sección 22.
+  }
+
+  // 4) Contenido no textual: responder según la sección 22 del prompt.
   if (mensaje.type !== 'text') {
     const avisos = {
       audio: 'El paciente envió un audio que no se puede transcribir. Responde con el mensaje de audios de la sección 22.',
@@ -158,7 +182,7 @@ async function procesarMensajeEntrante(mensaje, value) {
     return;
   }
 
-  // 4) Mensaje de texto normal: pasarlo al agente.
+  // 5) Mensaje de texto normal: pasarlo al agente.
   const nombrePerfil = value.contacts && value.contacts[0] && value.contacts[0].profile
     ? value.contacts[0].profile.name
     : null;

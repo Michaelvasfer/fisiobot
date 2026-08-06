@@ -68,4 +68,22 @@ async function notificarRecepcion(texto) {
   return sendText(config.recepcionWhatsapp, texto);
 }
 
-module.exports = { sendText, markAsRead, mostrarEscribiendo, notificarRecepcion, credencialesListas };
+// Descarga un archivo de media (audio, imagen, documento) por su id de Meta.
+// Devuelve { buffer, mime, extension }.
+async function descargarMedia(mediaId) {
+  if (!credencialesListas()) throw new Error('Sin credenciales de WhatsApp');
+  const cabeceras = { Authorization: `Bearer ${config.whatsapp.token}` };
+  const { data: meta } = await axios.get(
+    `https://graph.facebook.com/${config.whatsapp.graphVersion}/${mediaId}`,
+    { headers: cabeceras }
+  );
+  const { data: binario } = await axios.get(meta.url, {
+    headers: cabeceras,
+    responseType: 'arraybuffer',
+  });
+  const mime = meta.mime_type || 'application/octet-stream';
+  const extension = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') || mime.includes('mp4/aac') ? 'm4a' : mime.includes('mpeg') ? 'mp3' : mime.includes('amr') ? 'amr' : 'bin';
+  return { buffer: Buffer.from(binario), mime, extension };
+}
+
+module.exports = { sendText, markAsRead, mostrarEscribiendo, notificarRecepcion, credencialesListas, descargarMedia };
