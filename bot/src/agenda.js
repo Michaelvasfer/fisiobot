@@ -171,6 +171,71 @@ function cupoOcupado(store, fecha, hora) {
   );
 }
 
+// ─── Plantilla semanal con capacidad paralela (centro de fisioterapia) ───
+// Config en clinica.json → "agenda": { diasSemana, bloques: [{inicio, fin}],
+// duracionSesionMin, intervaloTurnoMin, capacidadParalela, diasAdelante }.
+// Turnos cada `intervaloTurnoMin`, sesiones de `duracionSesionMin`: un turno
+// está lleno solo cuando ya hay `capacidadParalela` sesiones traslapadas.
+const DIAS_NOMBRE = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+function horaTextoDe(mins) {
+  let h = Math.floor(mins / 60);
+  const m = String(mins % 60).padStart(2, '0');
+  const suf = h >= 12 ? 'p. m.' : 'a. m.';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${suf}`;
+}
+
+function aMinutos24(hhmm) {
+  const [h, m] = (hhmm || '0:0').split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fechaTextoDe(fecha) {
+  return `${DIAS_NOMBRE[fecha.getDay()]}, ${fecha.getDate()} de ${MESES[fecha.getMonth()]}`;
+}
+
+// Sesiones (confirmadas o pendientes recientes) que traslaparían el turno
+// [inicioMin, inicioMin+duracion): su inicio dista menos de duracion minutos.
+function sesionesSolapadas(store, fechaTexto, inicioMin, duracionMin) {
+  return citasQueBloquean(store).filter((c) => {
+    if (!mismaFecha(c.fecha, fechaTexto)) return false;
+    const ini = horaEnMinutos(c.hora);
+    if (ini === null) return false;
+    return Math.abs(ini - inicioMin) < duracionMin;
+  }).length;
+}
+
+function plantillaActiva() {
+  const ag = config.clinica.agenda;
+  return ag && Array.isArray(ag.bloques) ? ag : null;
+}
+
+function disponibilidadPlantilla(store) {
+  const ag = plantillaActiva();
+  if (!ag) return null;
+  const ahora = ahoraEnZona();
+  const dur = ag.duracionSesionMin || 60;
+  const paso = ag.intervaloTurnoMin || 30;
+  const cap = ag.capacidadParalela || 1;
+  const cupos = [];
+  for (let d = 0; d < (ag.diasAdelante || 14); d++) {
+    const fecha = new Date(ahora.anio, ahora.mes - 1, ahora.dia + d);
+    if (!(ag.diasSemana || []).includes(fecha.getDay())) continue;
+    const fechaTexto = fechaTextoDe(fecha);
+    const horas = [];
+    for (const b of ag.bloques) {
+      for (let t = aMinutos24(b.inicio); t + dur <= aMinutos24(b.fin); t += paso) {
+        if (d === 0 && t <= ahora.hora * 60 + ahora.minuto + antelacionMinutos()) continue;
+        if (sesionesSolapadas(store, fechaTexto, t, dur) < cap) horas.push(horaTextoDe(t));
+      }
+    }
+    if (horas.length > 0) cupos.push({ fecha: fechaTexto, horas });
+  }
+  return { modo: config.modoAgenda, cupos, sinCupos: cupos.length === 0 };
+}
+
 // Devuelve los cupos disponibles tal como se los debe mostrar el agente al paciente
 // (ya sin fechas pasadas, sin las horas de hoy que ya pasaron y sin los horarios
 // bloqueados por citas confirmadas o pendientes recientes).
@@ -180,6 +245,9 @@ async function consultarDisponibilidad(store) {
     const r = await kaminar.disponibilidad(antelacionMinutos());
     return { modo: config.modoAgenda, cupos: r.cupos || [], sinCupos: Boolean(r.sinCupos) };
   }
+  // Si hay plantilla semanal configurada, la agenda se calcula sola.
+  const plantilla = disponibilidadPlantilla(store);
+  if (plantilla) return plantilla;
   const cupos = (config.clinica.cuposDisponibles || [])
     .map((c) => ({
       fecha: c.fecha,
@@ -208,6 +276,21 @@ async function cupoValidoKaminar(fecha, hora) {
 // ofreció no debe "vencerse" mientras el paciente confirma sus datos.
 function cupoValido(fecha, hora, store) {
   if (cupoYaPaso(fecha, hora, MARGEN_REGISTRO_MINUTOS)) return false;
+  const ag = plantillaActiva();
+  if (ag) {
+    const fechaObj = fechaCupo(fecha);
+    if (!fechaObj || !(ag.diasSemana || []).includes(fechaObj.getDay())) return false;
+    const t = horaEnMinutos(hora);
+    if (t === null) return false;
+    const dur = ag.duracionSesionMin || 60;
+    const paso = ag.intervaloTurnoMin || 30;
+    const cap = ag.capacidadParalela || 1;
+    const enBloque = ag.bloques.some(
+      (b) => t >= aMinutos24(b.inicio) && t + dur <= aMinutos24(b.fin) && ((t - aMinutos24(b.inicio)) % paso) === 0
+    );
+    if (!enBloque) return false;
+    return sesionesSolapadas(store, fechaTextoDe(fechaObj), t, dur) < cap;
+  }
   const cupos = config.clinica.cuposDisponibles || [];
   const dia = cupos.find((c) => mismaFecha(c.fecha, fecha));
   if (!dia) return false;

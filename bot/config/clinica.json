@@ -7,7 +7,7 @@
     "ciudad": "Cajamarca, Perú",
     "direccion": "EDITAR: dirección del centro de fisioterapia",
     "precioConsulta": "S/ 50",
-    "duracionConsulta": "45 minutos",
+    "duracionConsulta": "1 hora",
     "modalidad": "atención presencial",
     "saludo": "Hola, soy el asistente del centro de fisioterapia y rehabilitación.\n\n¿En qué parte del cuerpo presenta molestia o qué tipo de terapia está buscando?",
     "consultaVirtualHabilitada": false
@@ -27,5 +27,29 @@
     "Yape",
     "Plin"
   ],
-  "campaniasActivas": []
+  "campaniasActivas": [],
+  "agenda": {
+    "diasSemana": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "bloques": [
+      {
+        "inicio": "08:00",
+        "fin": "13:00"
+      },
+      {
+        "inicio": "14:30",
+        "fin": "19:30"
+      }
+    ],
+    "duracionSesionMin": 60,
+    "intervaloTurnoMin": 30,
+    "capacidadParalela": 4,
+    "diasAdelante": 14
+  }
 }

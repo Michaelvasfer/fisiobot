@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { before, after } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -6,6 +7,15 @@ const path = require('path');
 const { crearStore } = require('../src/store');
 const { config } = require('../src/config');
 const agenda = require('../src/agenda');
+
+// Los tests de cupos manuales corren sin plantilla semanal (los tests de
+// plantilla la configuran explícitamente al final del archivo).
+let agendaOriginal;
+before(() => { agendaOriginal = config.clinica.agenda; config.clinica.agenda = undefined; });
+after(() => { config.clinica.agenda = agendaOriginal; });
+
+
+
 
 const MESES_T = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DIAS_T = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
@@ -286,6 +296,84 @@ test('citaPendienteEnCupo reconoce la reserva pendiente del mismo paciente', () 
     // Una vez confirmada, ya no es "pendiente".
     store.actualizarCita(cita.id, { estado: 'CONFIRMADA' });
     assert.strictEqual(agenda.citaPendienteEnCupo(store, '51999000111', LUNES.texto, '4:00 p. m.'), null);
+  } finally {
+    restaurar();
+  }
+});
+
+// ─── Plantilla semanal del centro de fisioterapia ───
+
+function conPlantillaDePrueba(extra) {
+  const originales = { agenda: config.clinica.agenda };
+  config.clinica.agenda = {
+    diasSemana: [0, 1, 2, 3, 4, 5, 6],
+    bloques: [{ inicio: '08:00', fin: '13:00' }],
+    duracionSesionMin: 60,
+    intervaloTurnoMin: 30,
+    capacidadParalela: 4,
+    diasAdelante: 3,
+    ...extra,
+  };
+  return () => { config.clinica.agenda = originales.agenda; };
+}
+
+test('la plantilla genera turnos cada 30 min respetando la duración de sesión', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const disp = await agenda.consultarDisponibilidad(store);
+    assert.ok(disp.cupos.length > 0);
+    const horas = disp.cupos[0].horas;
+    // Último turno del bloque 08:00-13:00 con sesión de 60 min: 12:00 p. m.
+    assert.ok(horas.includes('12:00 p. m.'));
+    assert.ok(!horas.includes('12:30 p. m.'));
+    // Turnos consecutivos de 30 min
+    const i = horas.indexOf('8:00 a. m.');
+    if (i !== -1) assert.ok(horas[i + 1] === '8:30 a. m.');
+  } finally {
+    restaurar();
+  }
+});
+
+test('capacidad 4: el turno se llena solo con 4 sesiones traslapadas', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const disp1 = await agenda.consultarDisponibilidad(store);
+    const dia = disp1.cupos[0];
+    const hora = dia.horas.find((h) => h.includes('9:00')) || dia.horas[0];
+
+    // Con 3 reservas en el mismo turno sigue libre.
+    for (let i = 0; i < 3; i++) {
+      store.guardarCita(citaDePrueba({ fecha: dia.fecha, hora, telefono: `5190000000${i}` }));
+    }
+    assert.strictEqual(agenda.cupoValido(dia.fecha, hora, store), true);
+
+    // Con la 4.ª se llena.
+    store.guardarCita(citaDePrueba({ fecha: dia.fecha, hora, telefono: '51900000003' }));
+    assert.strictEqual(agenda.cupoValido(dia.fecha, hora, store), false);
+
+    // Un turno 60 min después NO traslapa y sigue libre.
+    const [h12] = hora.split(':');
+    const horaMas60 = `${parseInt(h12, 10) + 1}:${hora.split(':')[1]}`;
+    assert.strictEqual(agenda.cupoValido(dia.fecha, horaMas60, store), true);
+  } finally {
+    restaurar();
+  }
+});
+
+test('sesiones traslapadas cuentan para la capacidad (30 min sí, 60 min no)', async () => {
+  const restaurar = conPlantillaDePrueba({ capacidadParalela: 1 });
+  try {
+    const store = storeTemporal();
+    const disp1 = await agenda.consultarDisponibilidad(store);
+    const dia = disp1.cupos[0];
+    const idx = dia.horas.findIndex((h) => h.includes('9:00'));
+    const hora = idx === -1 ? dia.horas[0] : dia.horas[idx];
+    store.guardarCita(citaDePrueba({ fecha: dia.fecha, hora }));
+    // El turno de 30 min después traslapa con la sesión de 60 min → lleno.
+    const horaSiguiente = dia.horas[idx + 1];
+    if (horaSiguiente) assert.strictEqual(agenda.cupoValido(dia.fecha, horaSiguiente, store), false);
   } finally {
     restaurar();
   }
