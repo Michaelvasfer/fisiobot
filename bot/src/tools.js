@@ -296,19 +296,22 @@ async function ejecutar(nombre, args, ctx) {
           campania: campania.nombre,
           precio: campania.precio || config.clinica.identidad.precioConsulta,
         });
-        store.establecerEstado(telefono, 'CITA_SOLICITADA');
+        // Modo automático: la sesión queda CONFIRMADA de una vez; recepción recibe
+      // el aviso y solo contacta al paciente si hay algún inconveniente.
+      store.actualizarCita(cita.id, { estado: 'CONFIRMADA' });
+      store.establecerEstado(telefono, 'CITA_CONFIRMADA');
         store.guardarLead(telefono, { nombre: args.nombre, dni: args.dni, motivo, campania: campania.nombre, nivel_interes: 'INTERES_ALTO' });
         await whatsapp.notificarRecepcion(
           [
             '*Nueva solicitud de CAMPAÑA (pendiente de confirmar)*',
             `Campaña: ${campania.nombre} (${campania.vigencia || 'fecha por confirmar'})`,
-            `Paciente: ${args.nombre} (${args.edad} años)`,
+            `Paciente: ${args.nombre}`,
             `DNI: ${args.dni}`,
             `Teléfono: ${telefono}`,
             `Motivo: ${motivo}`,
             `Hora: ${args.hora}`,
             `Precio informado: ${campania.precio || '—'}`,
-            `Para confirmarla responde: #confirmar ${telefono}`,
+            'Si hay algún inconveniente con el horario, comunícate con el paciente para reagendar.',
           ].join('\n')
         );
         return JSON.stringify({
@@ -365,7 +368,7 @@ async function ejecutar(nombre, args, ctx) {
       store.guardarLead(telefono, { nombre: args.nombre, dni: args.dni, motivo, nivel_interes: 'INTERES_ALTO' });
       await whatsapp.notificarRecepcion(
         [
-          '*Nueva solicitud de cita (pendiente de confirmar)*',
+          '*Nueva cita agendada por el bot*',
           `Paciente: ${args.nombre} (${args.edad} años)`,
           `DNI: ${args.dni}`,
           `Teléfono: ${telefono}`,
@@ -376,8 +379,8 @@ async function ejecutar(nombre, args, ctx) {
       );
       return JSON.stringify({
         exito: true,
-        pendienteDeConfirmacion: true,
-        mensaje: `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Informa al paciente que recepción le confirmará la reserva por este mismo medio. No digas que la cita está confirmada.`,
+        pendienteDeConfirmacion: false,
+        mensaje: `Sesión agendada y confirmada para el ${args.fecha} a las ${args.hora}. Informa al paciente que su sesión quedó CONFIRMADA (ej: "Su sesión quedó agendada para el ${args.fecha} a las ${args.hora}. Le esperamos.").`,
       });
     }
 

@@ -33,7 +33,7 @@ function textoCupos(c) {
 
 function textoModoAgenda(modo) {
   if (modo === 'automatico') {
-    return 'Modo AUTOMÁTICO: la herramienta consultar_disponibilidad devuelve la agenda real y solicitar_cita registra la cita directamente. No confirmes una cita hasta que solicitar_cita responda exitosamente.';
+    return 'Modo AUTOMÁTICO: consultar_disponibilidad devuelve la agenda real y solicitar_cita registra la cita directamente. Cuando solicitar_cita responde exitosamente, la sesión queda CONFIRMADA: díselo al paciente con claridad (ej. "Su sesión quedó agendada para el [fecha] a las [hora]. Le esperamos."). Recepción solo lo contactará si hay algún inconveniente con el horario.';
   }
   return [
     'Modo MANUAL: no existe agenda automática conectada.',

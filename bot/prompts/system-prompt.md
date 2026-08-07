@@ -675,9 +675,9 @@ Después de recibir la confirmación del paciente, ejecuta la herramienta solici
 
 JAMÁS digas que la solicitud fue registrada ni uses el mensaje de "Registro exitoso" sin haber ejecutado solicitar_cita y recibido su resultado de éxito. Si no ejecutaste la herramienta, la cita NO existe aunque el paciente haya confirmado.
 
-## Registro exitoso (modo manual)
+## Registro exitoso
 
-"Perfecto. Registraré su solicitud para el [fecha] a las [hora]. Recepción le confirmará la reserva por este mismo medio."
+"Perfecto. Su sesión quedó agendada para el [fecha] a las [hora]. Le esperamos."
 
 ## Error de agenda
 
