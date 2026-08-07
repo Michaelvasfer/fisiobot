@@ -322,6 +322,7 @@ async function ejecutar(nombre, args, ctx) {
       // Modo automático: la agenda real es Kaminar Med; el registro crea
       // paciente + cita ahí y se guarda una copia local con el id remoto.
       let kaminarId = null;
+      let codigoPaciente = null;
       if (config.modoAgenda === 'automatico' && kaminar.lista()) {
         if (!(await agenda.cupoValidoKaminar(args.fecha, args.hora))) {
           return JSON.stringify({
@@ -335,6 +336,7 @@ async function ejecutar(nombre, args, ctx) {
             fecha: args.fecha, hora: args.hora, telefono,
           });
           kaminarId = r.citaId || null;
+          codigoPaciente = r.codigoPaciente || null;
         } catch (err) {
           return JSON.stringify({
             exito: false,
@@ -375,7 +377,7 @@ async function ejecutar(nombre, args, ctx) {
       return JSON.stringify({
         exito: true,
         pendienteDeConfirmacion: true,
-        mensaje: `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Informa al paciente que recepción le confirmará la reserva por este mismo medio. No digas que la cita está confirmada.`,
+        mensaje: `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Informa al paciente que recepción le confirmará la reserva por este mismo medio. No digas que la cita está confirmada.` + (codigoPaciente ? ` Además, indícale su código de acceso al portal del paciente: ${codigoPaciente} (en https://fisio.kaminar.pe/patient_portal.php puede ver su plan, ejercicios y progreso).` : ''),
       });
     }
 
