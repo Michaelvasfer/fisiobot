@@ -64,6 +64,19 @@ const interesConfig: Record<string, { color: string; label: string }> = {
   PACIENTE_OPERADO: { color: 'bg-purple-500', label: 'Operado' },
 }
 
+function formatFechaHora(iso: string) {
+  try {
+    const d = new Date(iso)
+    const ahora = new Date()
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
+    const dia = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    const hora = d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+    if (dia.getTime() === hoy.getTime()) return `hoy ${hora}`
+    if (dia.getTime() === hoy.getTime() - 86400000) return `ayer ${hora}`
+    return `${d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })} ${hora}`
+  } catch { return '' }
+}
+
 function formatTime(iso: string) {
   try {
     return new Date(iso).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
@@ -311,7 +324,7 @@ export function ConversationsView() {
                         <span className="text-[10px] text-muted-foreground/60 truncate max-w-[120px]">{conv.motivo}</span>
                       )}
                       <span className="text-[10px] text-muted-foreground/50 ml-auto flex-shrink-0">
-                        {conv.ultimaActividad ? formatTime(conv.ultimaActividad) : ''}
+                        {conv.ultimaActividad ? formatFechaHora(conv.ultimaActividad) : ''}
                       </span>
                     </div>
                   </div>
