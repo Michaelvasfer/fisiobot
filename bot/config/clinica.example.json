@@ -200,7 +200,7 @@
     ],
     "duracionSesionMin": 60,
     "intervaloTurnoMin": 30,
-    "capacidadParalela": 4,
+    "capacidadParalela": 6,
     "diasAdelante": 14,
     "diasCerrados": []
   }

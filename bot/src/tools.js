@@ -327,7 +327,7 @@ async function ejecutar(nombre, args, ctx) {
         if (!(await agenda.cupoValidoKaminar(args.fecha, args.hora))) {
           return JSON.stringify({
             exito: false,
-            error: 'La fecha u hora ya no está disponible en la agenda. Vuelve a llamar a consultar_disponibilidad y ofrece solo esas opciones.',
+            error: 'La fecha u hora ya no está disponible en la agenda. Vuelve a llamar a consultar_disponibilidad y ofrece solo esas opciones. Si el paciente insiste en esa hora o hay cualquier inconveniente con el horario, NO fuerces el registro: deriva la conversación a recepción con derivar_recepcion para que una persona lo reagende manualmente.',
           });
         }
         try {
@@ -340,7 +340,7 @@ async function ejecutar(nombre, args, ctx) {
         } catch (err) {
           return JSON.stringify({
             exito: false,
-            error: `No se pudo registrar en la agenda del consultorio (${err.message}). Vuelve a consultar disponibilidad y reintenta; si persiste, deriva a recepción.`,
+            error: `No se pudo registrar en la agenda (${err.message}). Hay un inconveniente con el horario: deriva la conversación a recepción con derivar_recepcion para que una persona confirme y reagende manualmente. Informa al paciente que recepción le escribirá para coordinar.`,
           });
         }
       } else if (!agenda.cupoValido(args.fecha, args.hora, store)) {
