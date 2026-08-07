@@ -197,6 +197,13 @@ async function procesarMensajeEntrante(mensaje, value) {
   const contextos = [];
   const campania = contextoCampania(mensaje);
   if (campania) contextos.push(campania);
+  // Paciente recurrente: el agente recibe sus datos registrados para no pedirlos de nuevo.
+  const lead = store.obtenerLead(telefono);
+  if (lead && (lead.nombre || lead.dni)) {
+    contextos.push(
+      `Paciente recurrente con datos registrados: nombre "${lead.nombre || 'desconocido'}"${lead.dni ? `, DNI ${lead.dni}` : ''}. NO le pidas esos datos de nuevo: confírmalos (ej. "¿Es usted ${lead.nombre || 'la misma persona'}?"). Puede ser una consulta nueva y distinta a la anterior; pregunta el motivo como siempre.`
+    );
+  }
   if (nombrePerfil && !conv.historial.length) {
     contextos.push(`El nombre del perfil de WhatsApp del paciente es "${nombrePerfil}" (úsalo como referencia, confirma su nombre real antes de registrar una cita).`);
   }

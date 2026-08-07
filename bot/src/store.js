@@ -140,6 +140,11 @@ function crearStore(directorio) {
     return leads[telefono];
   }
 
+  function obtenerLead(telefono) {
+    const leads = leer(archivos.leads, {});
+    return leads[telefono] || null;
+  }
+
   // --- Derivaciones
   function guardarDerivacion(derivacion) {
     const derivaciones = leer(archivos.derivaciones, []);
@@ -199,6 +204,7 @@ function crearStore(directorio) {
     actualizarCita,
     citaPendienteDe,
     guardarLead,
+    obtenerLead,
     guardarDerivacion,
     listarSuscripcionesPush,
     guardarSuscripcionPush,
