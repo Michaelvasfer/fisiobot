@@ -17,6 +17,7 @@ const { config } = require('./config');
 const whatsapp = require('./whatsapp');
 const agenda = require('./agenda');
 const kaminar = require('./kaminar');
+const push = require('./push');
 
 const RUTA_CONFIG = path.join(__dirname, '..', 'config', 'seguimiento.json');
 const INTERVALO_MS = 60 * 1000;
@@ -135,7 +136,7 @@ async function revisarListaEspera(store) {
 // --- Resumen matutino: a las 07:00 (Lima) manda la agenda del día a recepción ---
 const RUTA_ESTADO_RESUMEN = path.join(__dirname, '..', 'data', 'resumen-state.json');
 
-async function resumenMatutino() {
+async function resumenMatutino(store) {
   if (!(config.modoAgenda === 'automatico' && kaminar.lista())) return;
   const ahoraMin = minutosAhoraEnZona();
   if (ahoraMin < 7 * 60 || ahoraMin >= 7 * 60 + 5) return; // ventana 07:00–07:05
@@ -150,7 +151,10 @@ async function resumenMatutino() {
     const lineas = citas.length
       ? citas.map((c) => `• ${c.hora} — ${c.paciente} (${c.estado})`)
       : ['(sin citas registradas para hoy)'];
-    await whatsapp.notificarRecepcion([`*Agenda de hoy — ${citas.length} cita(s):*`, ...lineas].join('\n'));
+    const resumen = [`*Agenda de hoy — ${citas.length} cita(s):*`, ...lineas].join('\n');
+    await whatsapp.notificarRecepcion(resumen);
+    // Respaldo por push al panel: no depende de la ventana de 24 h de Meta.
+    push.enviarPush(store, `Agenda de hoy — ${citas.length} cita(s)`, lineas.join(' · ').slice(0, 200), {}).catch(() => {});
     estado.ultimo = hoy;
     fs.writeFileSync(RUTA_ESTADO_RESUMEN, JSON.stringify(estado));
     console.log('[resumen] agenda matutina enviada a recepción');
@@ -162,7 +166,7 @@ async function resumenMatutino() {
 async function ciclo(store) {
   await cicloSeguimiento(store);
   await revisarListaEspera(store).catch((e) => console.error('[lista-espera] error:', e.message));
-  await resumenMatutino().catch((e) => console.error('[resumen] error:', e.message));
+  await resumenMatutino(store).catch((e) => console.error('[resumen] error:', e.message));
 }
 
 function iniciar(store) {
