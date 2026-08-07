@@ -65,6 +65,14 @@ async function procesarPayload(body) {
   for (const entry of body.entry || []) {
     for (const change of entry.changes || []) {
       const value = change.value || {};
+      // Solo procesar mensajes dirigidos al número de ESTE bot. Si la app de
+      // Meta está suscrita a más de una cuenta, el webhook recibe eventos de
+      // todos los números; los que no son de este bot se ignoran.
+      const destino = value.metadata && value.metadata.phone_number_id;
+      if (destino && config.whatsapp.phoneNumberId && destino !== config.whatsapp.phoneNumberId) {
+        console.log(`[webhook] evento para otro número (${destino}); se ignora.`);
+        continue;
+      }
       for (const mensaje of value.messages || []) {
         await procesarMensajeEntrante(mensaje, value);
       }
