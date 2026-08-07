@@ -201,7 +201,7 @@ async function procesarMensajeEntrante(mensaje, value) {
   const lead = store.obtenerLead(telefono);
   if (lead && (lead.nombre || lead.dni)) {
     contextos.push(
-      `Paciente recurrente con datos registrados: nombre "${lead.nombre || 'desconocido'}"${lead.dni ? `, DNI ${lead.dni}` : ''}. NO le pidas esos datos de nuevo: confírmalos (ej. "¿Es usted ${lead.nombre || 'la misma persona'}?"). Puede ser una consulta nueva y distinta a la anterior; pregunta el motivo como siempre.`
+      `Paciente recurrente con datos registrados: nombre "${lead.nombre || 'desconocido'}"${lead.dni ? `, DNI ${lead.dni}` : ''}. Salúdalo por su nombre con confianza (ej. "¿Cómo está, Sr. ${(lead.nombre || '').split(' ')[0]}?") y usa sus datos para agendar SIN pedírselos ni preguntarle si es él. Puede ser una consulta nueva y distinta a la anterior; pregunta el motivo como siempre.`
     );
   }
   if (nombrePerfil && !conv.historial.length) {
