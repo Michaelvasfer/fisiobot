@@ -377,7 +377,7 @@ async function ejecutar(nombre, args, ctx) {
       return JSON.stringify({
         exito: true,
         pendienteDeConfirmacion: true,
-        mensaje: `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Informa al paciente que recepción le confirmará la reserva por este mismo medio. No digas que la cita está confirmada.` + (codigoPaciente ? ` Además, indícale su código de acceso al portal del paciente: ${codigoPaciente} (en https://fisio.kaminar.pe/patient_portal.php puede ver su plan, ejercicios y progreso).` : ''),
+        mensaje: `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Informa al paciente que recepción le confirmará la reserva por este mismo medio. No digas que la cita está confirmada.`,
       });
     }
 
