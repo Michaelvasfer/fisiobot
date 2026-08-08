@@ -5,7 +5,13 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const fs = require('fs');
 
-const clinicaPath = path.join(__dirname, '..', 'config', 'clinica.json');
+// En tests (NODE_TEST_CONTEXT lo define `node --test`) se usa una config fija:
+// la real (bot/config/clinica.json) está gitignored y en el servidor tiene los
+// datos del consultorio, lo que haría fallar los tests en el deploy.
+const esTest = !!process.env.NODE_TEST_CONTEXT;
+const clinicaPath = esTest
+  ? path.join(__dirname, '..', 'test', 'fixtures', 'clinica.test.json')
+  : path.join(__dirname, '..', 'config', 'clinica.json');
 const clinica = JSON.parse(fs.readFileSync(clinicaPath, 'utf8'));
 
 const config = {
@@ -33,7 +39,9 @@ const config = {
   },
   // Contraseña del panel de administración (/admin). Si está vacía, el panel queda deshabilitado.
   adminPassword: process.env.ADMIN_PASSWORD || '',
-  modoAgenda: process.env.MODO_AGENDA === 'automatico' ? 'automatico' : 'manual',
+  // En tests se fuerza 'manual': el .env del servidor usa 'automatico' y los
+  // tests del prompt esperan el texto del modo manual.
+  modoAgenda: esTest ? 'manual' : (process.env.MODO_AGENDA === 'automatico' ? 'automatico' : 'manual'),
   // Minutos que un horario queda bloqueado por una solicitud pendiente; si recepción
   // no confirma la cita dentro de ese plazo, el cupo se libera y el bot vuelve a ofrecerlo.
   reservaTtlMinutos: parseInt(process.env.RESERVA_TTL_MINUTOS || '120', 10),

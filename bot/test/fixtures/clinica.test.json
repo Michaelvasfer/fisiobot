@@ -1,0 +1,207 @@
+{
+  "identidad": {
+    "nombreAgente": "Asistente Virtual del Centro de Fisioterapia",
+    "zonaHoraria": "America/Lima",
+    "medico": "el equipo de fisioterapia",
+    "especialidad": "Fisioterapia y Rehabilitación",
+    "ciudad": "Cajamarca, Perú",
+    "direccion": "EDITAR: dirección del centro de fisioterapia",
+    "precioConsulta": "S/ 50",
+    "duracionConsulta": "1 hora",
+    "modalidad": "atención presencial",
+    "saludo": "Hola, soy el asistente del centro de fisioterapia y rehabilitación.\n\n¿En qué parte del cuerpo presenta molestia o qué tipo de terapia está buscando?",
+    "consultaVirtualHabilitada": false
+  },
+  "horarioGeneral": {
+    "lunes": "no disponible",
+    "martes": "no disponible",
+    "miercoles": "no disponible",
+    "jueves": "no disponible",
+    "viernes": "no disponible",
+    "sabado": "no disponible",
+    "domingo": "no disponible"
+  },
+  "cuposDisponibles": [
+    {
+      "fecha": "sábado 8 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    },
+    {
+      "fecha": "lunes 10 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    },
+    {
+      "fecha": "martes 11 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    },
+    {
+      "fecha": "miércoles 12 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    },
+    {
+      "fecha": "jueves 13 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    },
+    {
+      "fecha": "viernes 14 de agosto",
+      "horas": [
+        "8:00 a. m.",
+        "8:30 a. m.",
+        "9:00 a. m.",
+        "9:30 a. m.",
+        "10:00 a. m.",
+        "10:30 a. m.",
+        "11:00 a. m.",
+        "11:30 a. m.",
+        "12:00 p. m.",
+        "12:30 p. m.",
+        "2:30 p. m.",
+        "3:00 p. m.",
+        "3:30 p. m.",
+        "4:00 p. m.",
+        "4:30 p. m.",
+        "5:00 p. m.",
+        "5:30 p. m.",
+        "6:00 p. m.",
+        "6:30 p. m.",
+        "7:00 p. m."
+      ]
+    }
+  ],
+  "mediosDePago": [
+    "Efectivo",
+    "Yape",
+    "Plin"
+  ],
+  "campaniasActivas": [],
+  "agenda": {
+    "diasSemana": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "bloques": [
+      {
+        "inicio": "08:00",
+        "fin": "13:00"
+      },
+      {
+        "inicio": "14:30",
+        "fin": "19:30"
+      }
+    ],
+    "duracionSesionMin": 60,
+    "intervaloTurnoMin": 30,
+    "capacidadParalela": 6,
+    "diasAdelante": 14,
+    "diasCerrados": []
+  }
+}
