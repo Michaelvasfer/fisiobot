@@ -667,7 +667,7 @@ Motivo: [motivo principal]
 Fecha: [fecha]
 Hora: [hora]
 Consulta: {{PRECIO}}
-Dirección: Av. Mario Urteaga 555
+Dirección: {{DIRECCION}}
 
 ¿Los datos son correctos?"
 
@@ -695,7 +695,7 @@ No ocultes el error. No afirmes que la cita está confirmada.
 
 ## Dirección
 
-"Atendemos en la Av. Mario Urteaga 555, frente al Hospital Simón Bolívar, en Cajamarca."
+"Atendemos en {{DIRECCION}}. ¿Le envío la ubicación por aquí?"
 
 ## Duración
 

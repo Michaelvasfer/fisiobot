@@ -102,7 +102,8 @@ function construirSystemPrompt() {
     .replace('{{MEDIOS_PAGO}}', (c.mediosDePago || []).join(', '))
     .replace('{{CAMPANIAS}}', textoCampanias(c))
     .replace('{{SALUDO}}', textoSaludo(c))
-    .replace(/\{\{PRECIO\}\}/g, c.identidad.precioConsulta || '');
+    .replace(/\{\{PRECIO\}\}/g, c.identidad.precioConsulta || '')
+    .replace(/\{\{DIRECCION\}\}/g, c.identidad.direccion || '');
 }
 
 module.exports = { construirSystemPrompt, textoCupos, textoModoAgenda, textoCampanias, textoSaludo, estadoDe, DIAS };
