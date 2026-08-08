@@ -18,14 +18,16 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            PROJECT_DIR=$(find /root /home /opt /srv /var/www -maxdepth 3 -name deploy-agenteconsultorio.sh 2>/dev/null | head -1 | xargs -r dirname)
-            if [ -z "$PROJECT_DIR" ]; then
-              echo "❌ No se encontró deploy-agenteconsultorio.sh en el servidor."
-              echo "Contenido de /root, /home, /opt y /srv:"
-              ls -la /root /home /opt /srv 2>/dev/null || true
+            # Ruta fija: en el servidor existe OTRO bot independiente
+            # (/var/www/agenteconsultorio-admin, asistente.kaminar.pe) con el
+            # mismo script de deploy. No usar `find` aquí: podría elegir el
+            # proyecto equivocado y mezclar los dos bots.
+            PROJECT_DIR=/var/www/fisiobot
+            if [ ! -f "$PROJECT_DIR/deploy-agenteconsultorio.sh" ]; then
+              echo "❌ No se encontró $PROJECT_DIR/deploy-agenteconsultorio.sh"
               exit 1
             fi
-            echo "→ Proyecto encontrado en: $PROJECT_DIR"
+            echo "→ Proyecto: $PROJECT_DIR"
             cd "$PROJECT_DIR"
             # Primero el pull: así el script de deploy que se ejecuta
             # es siempre el de esta versión, no el viejo del servidor.

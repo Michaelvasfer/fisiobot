@@ -38,6 +38,17 @@ El `Caddyfile` enruta el tráfico así:
 | `/webhook`, `/health`, `/admin`, `/chat/*` | Bot Express (`localhost:3101`) |
 | resto | Dashboard Next.js (`localhost:3010`) |
 
-En producción el enrutamiento lo hace **nginx** (`asistente.kaminar.pe`); el `Caddyfile` aplica solo al entorno de preview. Ojo: el puerto 3000 del servidor pertenece a KaminarMed (kaminar.pe) — el dashboard de este proyecto usa el 3010.
+En producción el enrutamiento lo hace **nginx**; el `Caddyfile` aplica solo al entorno de preview. Ojo: el puerto 3000 del servidor pertenece a KaminarMed (kaminar.pe).
+
+### Dos bots independientes en el mismo servidor (NO mezclar)
+
+| | Este repo (`fisiobot`) | Repo `agenteconsultorio` (viejo) |
+|---|---|---|
+| Dominio | `fisiobot.kaminar.pe` | `asistente.kaminar.pe` |
+| Directorio | `/var/www/fisiobot` | `/var/www/agenteconsultorio-admin` |
+| Bot / panel | `:3201` / `:3210` | `:3101` / `:3010` |
+| Procesos PM2 | `fisiobot`, `fisiobot-dashboard` | `bot`, `dashboard` |
+
+Cada bot tiene **su propio número de WhatsApp y sus propias credenciales** en su `bot/.env`. Son servicios independientes: no copiar `.env` ni `bot/data/` entre ellos, y no repuntar nginx de un dominio al otro. El workflow de deploy (`.github/workflows/deploy.yml`) usa ruta fija `/var/www/fisiobot` por esta razón.
 
 En Meta for Developers, configura el webhook como `https://tu-dominio/webhook` con el mismo `WEBHOOK_VERIFY_TOKEN` del `bot/.env`. Ambos procesos (dashboard y bot) deben estar corriendo en el servidor.
