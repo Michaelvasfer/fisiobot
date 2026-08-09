@@ -77,6 +77,12 @@ test('no envía si el último mensaje es del paciente', () => {
   assert.strictEqual(evaluar(conv, cfgBase(), '51999', AHORA, MEDIODIA_LIMA), null);
 });
 
+test('no dispara seguimiento sobre mensajes registrados desde la fisioapp', () => {
+  const conv = convBase();
+  conv.historial[1].kaminar = true; // reseña anotada por la fisioapp, no es conversación del bot
+  assert.strictEqual(evaluar(conv, cfgBase(), '51999', AHORA, MEDIODIA_LIMA), null);
+});
+
 test('reinicia la secuencia si el paciente respondió después del seguimiento', () => {
   const conv = convBase({
     seguimiento: { pasosEnviados: 1, ultimoEnviado: new Date(AHORA - 4 * 3600000).toISOString() },

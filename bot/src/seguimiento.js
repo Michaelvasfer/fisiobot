@@ -72,6 +72,9 @@ function evaluar(conv, cfg, telefono, ahoraMs, minutosZona) {
     return null;
   }
   if (ultimo.role !== 'assistant') return null;
+  // Mensaje anotado desde la fisioapp (reseña/recordatorio enviado fuera del
+  // bot): no forma parte de la conversación; no debe disparar seguimientos.
+  if (ultimo.kaminar) return null;
   if (!enHorario(cfg, minutosZona === undefined ? minutosAhoraEnZona() : minutosZona)) return null;
 
   const pasos = (cfg.pasos || []).filter((p) => p.activo && p.mensaje);

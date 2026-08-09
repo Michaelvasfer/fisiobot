@@ -129,5 +129,15 @@ module.exports = function crearRouterAdmin(store, whatsapp) {
     }
   });
 
+  // --- API: registrar un mensaje enviado FUERA del bot (p. ej. la solicitud
+  // de reseña que la fisioapp manda directo por la Cloud API) para que se vea
+  // en el chat del panel. NO envía nada por WhatsApp; solo lo anota. ---
+  router.post('/api/conversaciones/:telefono/registrar', (req, res) => {
+    const texto = (req.body && req.body.texto ? String(req.body.texto) : '').trim();
+    if (!texto) return res.status(400).json({ error: 'texto vacío' });
+    store.agregarMensaje(req.params.telefono, 'assistant', texto, { kaminar: true });
+    res.json({ ok: true });
+  });
+
   return router;
 };
