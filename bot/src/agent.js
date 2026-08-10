@@ -7,6 +7,10 @@ const tools = require('./tools');
 
 const MAX_ITERACIONES_TOOLS = 5;
 const MENSAJES_HISTORIAL_OPENAI = 20; // solo los últimos N mensajes van a OpenAI (ahorro de tokens)
+// Red determinística: texto que habla de horarios o disponibilidad. Si el modelo
+// responde algo así SIN haber llamado a consultar_disponibilidad en este turno
+// (p. ej. repitiendo una respuesta vieja del historial), se le obliga a verificar.
+const PATRON_HORARIOS = /disponibil|disponible|ocupad[ao]|a las \d{1,2}/i;
 const MENSAJE_ERROR =
   'Disculpe, tuve un inconveniente técnico para responder. Derivaré su consulta a recepción para que continúe ayudándole por este mismo medio.';
 
@@ -60,6 +64,8 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
 
   try {
     let iteraciones = 0;
+    let consultoAgenda = false;
+    let correccionAgendaHecha = false;
     // Historial temporal de esta llamada (incluye tool calls y sus resultados).
     const trabajo = [...mensajes];
 
@@ -79,6 +85,18 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
         // Red de seguridad: aunque el modelo desobedezca, al paciente no le llegan emojis
         // ni previews automáticos de calendario de WhatsApp.
         const textoFinal = sinPreviewCalendario(sinEmojis(mensaje.content));
+        if (!consultoAgenda && !correccionAgendaHecha && PATRON_HORARIOS.test(textoFinal)) {
+          correccionAgendaHecha = true;
+          console.warn(`[agente] ${telefono} habló de horarios sin consultar la agenda; se le obliga a verificar.`);
+          trabajo.push({
+            role: 'system',
+            content:
+              '[Sistema: Acabas de mencionar horarios o disponibilidad SIN consultar la agenda en este turno. Está prohibido. ' +
+              'Llama AHORA a consultar_disponibilidad — pasando fecha y hora si el paciente pidió un horario concreto — ' +
+              'y responde usando únicamente lo que la herramienta devuelva.]',
+          });
+          continue;
+        }
         // Guardar en el historial persistente: usuario + respuesta final.
         store.agregarMensaje(telefono, 'user', contenidoUsuario);
         store.agregarMensaje(telefono, 'assistant', textoFinal);
@@ -93,6 +111,7 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
         } catch {
           args = {};
         }
+        if (llamada.function.name === 'consultar_disponibilidad') consultoAgenda = true;
         let resultado;
         try {
           resultado = await tools.ejecutar(llamada.function.name, args, { telefono, store });
