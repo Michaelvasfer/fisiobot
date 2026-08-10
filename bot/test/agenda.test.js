@@ -182,7 +182,9 @@ test('no ofrece cupos de fechas pasadas', async () => {
 
 test('las horas de hoy que ya pasaron no se ofrecen', async () => {
   const originales = config.clinica.cuposDisponibles;
-  const hoy = new Date();
+  // "Hoy" en la zona del consultorio (America/Lima), no la del servidor:
+  // el servidor corre en UTC y cerca de medianoche Lima las fechas difieren.
+  const hoy = ahoraLima();
   const textoHoy = textoDeFecha(hoy);
   // 12:00 a. m. ya pasó siempre; 11:59 p. m. casi siempre sigue futura.
   config.clinica.cuposDisponibles = [{ fecha: textoHoy, horas: ['12:00 a. m.', '11:59 p. m.'] }];
@@ -198,13 +200,14 @@ test('las horas de hoy que ya pasaron no se ofrecen', async () => {
 });
 
 test('resolverFechaRelativa convierte "mañana" y días de la semana a fechas concretas', () => {
-  const f1 = new Date(Date.now() + 86400000);
+  // Mismo criterio de "hoy" que el código bajo prueba: la zona del consultorio.
+  const f1 = new Date(ahoraLima().getTime() + 86400000);
   assert.strictEqual(agenda.resolverFechaRelativa('mañana'), `${f1.getDate()} de ${MESES_T[f1.getMonth()]}`);
-  const f2 = new Date(Date.now() + 2 * 86400000);
+  const f2 = new Date(ahoraLima().getTime() + 2 * 86400000);
   assert.strictEqual(agenda.resolverFechaRelativa('pasado mañana'), `${f2.getDate()} de ${MESES_T[f2.getMonth()]}`);
 
   // "el viernes" → próxima ocurrencia del viernes (incluyendo hoy si hoy es viernes).
-  const hoy = new Date();
+  const hoy = ahoraLima();
   const offsetV = (5 - hoy.getDay() + 7) % 7;
   const fv = new Date(hoy.getTime() + offsetV * 86400000);
   assert.strictEqual(agenda.resolverFechaRelativa('el viernes'), `${fv.getDate()} de ${MESES_T[fv.getMonth()]}`);
