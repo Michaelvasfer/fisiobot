@@ -16,7 +16,7 @@ const path = require('path');
 const { config } = require('./config');
 const whatsapp = require('./whatsapp');
 const agenda = require('./agenda');
-const kaminar = require('./kaminar');
+const fisio = require('./fisio');
 const push = require('./push');
 
 const RUTA_CONFIG = path.join(__dirname, '..', 'config', 'seguimiento.json');
@@ -72,8 +72,10 @@ function evaluar(conv, cfg, telefono, ahoraMs, minutosZona) {
     return null;
   }
   if (ultimo.role !== 'assistant') return null;
-  // Mensaje anotado desde la fisioapp (reseña/recordatorio enviado fuera del
-  // bot): no forma parte de la conversación; no debe disparar seguimientos.
+  // Mensaje anotado desde la agenda remota (reseña/recordatorio enviado fuera
+  // del bot): no forma parte de la conversación; no debe disparar seguimientos.
+  // La flag se llama "kaminar" por compatibilidad con el historial ya guardado
+  // en data/conversaciones.json.
   if (ultimo.kaminar) return null;
   if (!enHorario(cfg, minutosZona === undefined ? minutosAhoraEnZona() : minutosZona)) return null;
 
@@ -140,7 +142,7 @@ async function revisarListaEspera(store) {
 const RUTA_ESTADO_RESUMEN = path.join(__dirname, '..', 'data', 'resumen-state.json');
 
 async function resumenMatutino(store) {
-  if (!(config.modoAgenda === 'automatico' && kaminar.lista())) return;
+  if (!(config.modoAgenda === 'automatico' && fisio.lista())) return;
   const ahoraMin = minutosAhoraEnZona();
   if (ahoraMin < 7 * 60 || ahoraMin >= 7 * 60 + 5) return; // ventana 07:00–07:05
   const zona = (config.clinica.identidad && config.clinica.identidad.zonaHoraria) || 'America/Lima';
@@ -149,7 +151,7 @@ async function resumenMatutino(store) {
   try { estado = JSON.parse(fs.readFileSync(RUTA_ESTADO_RESUMEN, 'utf8')); } catch {}
   if (estado.ultimo === hoy) return;
   try {
-    const r = await kaminar.citasDelDia();
+    const r = await fisio.citasDelDia();
     const citas = r.citas || [];
     const lineas = citas.length
       ? citas.map((c) => `• ${c.hora} — ${c.paciente} (${c.estado})`)

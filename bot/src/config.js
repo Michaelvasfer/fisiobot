@@ -24,14 +24,22 @@ const config = {
     token: process.env.WHATSAPP_TOKEN || '',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
     verifyToken: process.env.WEBHOOK_VERIFY_TOKEN || '',
+    // Número que ESTE bot debe tener conectado (anti-cruce): Fisiobot es el
+    // 953838656 (KaminarFisio). El 928742228 es de Kaminar Med, lo usa el OTRO
+    // bot ("agente whatsapp"). Si las credenciales corresponden a otro número,
+    // verificarNumeroPropio() lo avisa al arrancar.
+    numeroEsperado: process.env.WHATSAPP_NUMERO_ESPERADO || '',
     graphVersion: 'v21.0',
   },
   recepcionWhatsapp: process.env.RECEPCION_WHATSAPP || '',
-  // Agenda real (Kaminar Med). Con MODO_AGENDA=automatico el bot consulta y
+  // Agenda real: KaminarFisio (fisio.kaminar.pe), el sistema de agenda del
+  // centro de fisioterapia. Con MODO_AGENDA=automatico el bot consulta y
   // registra citas ahí en vez de usar los cupos manuales de clinica.json.
-  kaminar: {
-    url: process.env.KAMINAR_API_URL || '',
-    token: process.env.KAMINAR_API_TOKEN || '',
+  // OJO: kaminar.pe (sin "fisio.") es Kaminar Med, el sistema de OTRO
+  // consultorio con su propio bot; este bot NUNCA debe apuntar ahí.
+  fisio: {
+    url: process.env.FISIO_API_URL || '',
+    token: process.env.FISIO_API_TOKEN || '',
   },
   vapid: {
     publicKey: process.env.VAPID_PUBLIC_KEY || '',
@@ -53,6 +61,31 @@ const config = {
   habilitarChatWeb: process.env.HABILITAR_CHAT_WEB !== 'false',
   clinica,
 };
+
+// Validación anti-cruce: en modo automático la URL de la agenda DEBE apuntar a
+// KaminarFisio (fisio.kaminar.pe). kaminar.pe es Kaminar Med, el sistema de
+// otro consultorio con su propio bot ("agente whatsapp") y su propio número de
+// WhatsApp: si Fisiobot apuntara ahí, registraría citas en la agenda equivocada.
+function validarUrlAgenda() {
+  if (config.modoAgenda !== 'automatico' || !config.fisio.url) return;
+  let host;
+  try {
+    host = new URL(config.fisio.url).hostname;
+  } catch {
+    throw new Error(`[config] FISIO_API_URL no es una URL válida: "${config.fisio.url}". Corrige bot/.env.`);
+  }
+  const permitidos = ['fisio.kaminar.pe', 'localhost', '127.0.0.1'];
+  if (!permitidos.includes(host)) {
+    throw new Error(
+      `[config] FISIO_API_URL apunta a ${host}` +
+        (host === 'kaminar.pe' || host.endsWith('.kaminar.pe')
+          ? ' (Kaminar Med, el sistema de OTRO consultorio con su propio bot)'
+          : '') +
+        '. Fisiobot debe integrarse con fisio.kaminar.pe (KaminarFisio). Corrige bot/.env.'
+    );
+  }
+}
+validarUrlAgenda();
 
 // Relee config/clinica.json y actualiza el objeto en caliente (el bot usa los
 // nuevos valores en el siguiente mensaje, sin reiniciar).
@@ -90,6 +123,10 @@ function avisarConfiguracionIncompleta() {
   if (!config.whatsapp.verifyToken) faltantes.push('WEBHOOK_VERIFY_TOKEN');
   if (!config.recepcionWhatsapp) faltantes.push('RECEPCION_WHATSAPP');
   if (!config.adminPassword) faltantes.push('ADMIN_PASSWORD (panel /admin deshabilitado)');
+  if (config.modoAgenda === 'automatico') {
+    if (!config.fisio.url) faltantes.push('FISIO_API_URL (MODO_AGENDA=automatico)');
+    if (!config.fisio.token) faltantes.push('FISIO_API_TOKEN (MODO_AGENDA=automatico)');
+  }
   if (faltantes.length > 0) {
     console.warn(`[config] Variables sin definir en .env: ${faltantes.join(', ')}`);
   }

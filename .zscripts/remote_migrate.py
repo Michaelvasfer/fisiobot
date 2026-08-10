@@ -5,12 +5,18 @@ NUEVO = "/var/www/fisiobot"
 BK = "/root/migracion-fisiobot-" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
 os.makedirs(BK, exist_ok=True)
 
-# Claves que deben pasar del viejo (produccion) al nuevo
+# Claves que deben pasar del viejo (produccion) al nuevo.
+# FISIO_API_URL/FISIO_API_TOKEN: en el .env viejo aun se llamaban
+# KAMINAR_API_URL/KAMINAR_API_TOKEN; se copian ya renombradas.
 CLAVES = [
     "WHATSAPP_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WEBHOOK_VERIFY_TOKEN",
-    "RECEPCION_WHATSAPP", "KAMINAR_API_URL", "KAMINAR_API_TOKEN",
+    "RECEPCION_WHATSAPP", "FISIO_API_URL", "FISIO_API_TOKEN",
     "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY",
 ]
+RENOMBRADAS = {"FISIO_API_URL": "KAMINAR_API_URL", "FISIO_API_TOKEN": "KAMINAR_API_TOKEN"}
+
+def valor_viejo(env_viejo, k):
+    return env_viejo.get(k) or env_viejo.get(RENOMBRADAS.get(k, ""), None)
 
 def leer_env(p):
     d = {}
@@ -39,12 +45,14 @@ actualizadas, agregadas = [], []
 for i, l in enumerate(lineas):
     if l and not l.startswith("#") and "=" in l:
         k = l.split("=", 1)[0]
-        if k in CLAVES and k in env_viejo:
-            lineas[i] = k + "=" + env_viejo[k]
+        v = valor_viejo(env_viejo, k)
+        if k in CLAVES and v is not None:
+            lineas[i] = k + "=" + v
             actualizadas.append(k)
 for k in CLAVES:
-    if k in env_viejo and k not in presentes:
-        lineas.append(k + "=" + env_viejo[k])
+    v = valor_viejo(env_viejo, k)
+    if v is not None and k not in presentes:
+        lineas.append(k + "=" + v)
         agregadas.append(k)
 open(env_nuevo_path, "w", encoding="utf-8").write("\n".join(lineas) + "\n")
 print("env actualizadas:", actualizadas)

@@ -6,7 +6,7 @@ const { crearStore } = require('./store');
 const whatsapp = require('./whatsapp');
 const push = require('./push');
 const { procesarMensaje } = require('./agent');
-const kaminar = require('./kaminar');
+const fisio = require('./fisio');
 
 const app = express();
 app.use(express.json());
@@ -117,12 +117,12 @@ async function procesarMensajeEntrante(mensaje, value) {
   // 2b) Respuestas directas a recordatorios (modo automático con agenda real):
   // "confirmo" → confirma la próxima cita pendiente; "cancelo" → libera el cupo.
   // Se usan palabras exactas para no chocar con el "si" del flujo de registro.
-  if (texto && config.modoAgenda === 'automatico' && kaminar.lista()) {
+  if (texto && config.modoAgenda === 'automatico' && fisio.lista()) {
     const plano = texto.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ.!¡?¿]/g, '');
     if (plano === 'confirmo' || plano === 'cancelo') {
       try {
         if (plano === 'confirmo') {
-          const r = await kaminar.confirmarPorTelefono(telefono);
+          const r = await fisio.confirmarPorTelefono(telefono);
           if (r.ok) {
             store.agregarMensaje(telefono, 'user', texto);
             const respuesta = `Perfecto, su cita quedó confirmada para el ${r.fecha} a las ${r.hora}. Le esperamos.`;
@@ -132,7 +132,7 @@ async function procesarMensajeEntrante(mensaje, value) {
           }
           // Sin cita pendiente: sigue el flujo normal del agente.
         } else {
-          const r = await kaminar.cancelarPorTelefono(telefono);
+          const r = await fisio.cancelarPorTelefono(telefono);
           if (r.ok) {
             store.agregarMensaje(telefono, 'user', texto);
             const respuesta = `Entendido. Su cita del ${r.fecha} a las ${r.hora} quedó cancelada. Si desea reprogramar, con gusto le muestro los horarios disponibles.`;
@@ -293,9 +293,12 @@ async function procesarComandoRecepcion(texto) {
       }
       store.actualizarCita(cita.id, { estado: 'CONFIRMADA' });
       // Si la cita también existe en la agenda real (modo automático), confirmarla allá.
+      // La clave "kaminarId" se conserva por compatibilidad con las citas ya
+      // guardadas en data/citas.json; es el id de la cita en la agenda remota
+      // (hoy KaminarFisio, fisio.kaminar.pe).
       if (cita.kaminarId) {
-        kaminar.actualizarEstado(cita.kaminarId, 'confirmada')
-          .catch((e) => console.error('[kaminar] no se pudo confirmar la cita remota:', e.message));
+        fisio.actualizarEstado(cita.kaminarId, 'confirmada')
+          .catch((e) => console.error('[fisio] no se pudo confirmar la cita remota:', e.message));
       }
       store.establecerEstado(telefono, 'CITA_CONFIRMADA');
       const i = config.clinica.identidad;
@@ -323,6 +326,7 @@ async function procesarComandoRecepcion(texto) {
 
 if (require.main === module) {
   avisarConfiguracionIncompleta();
+  whatsapp.verificarNumeroPropio();
   app.listen(config.port, () => {
     console.log(`Agente de WhatsApp escuchando en http://localhost:${config.port}`);
     if (config.habilitarChatWeb) {

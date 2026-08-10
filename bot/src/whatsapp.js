@@ -86,4 +86,36 @@ async function descargarMedia(mediaId) {
   return { buffer: Buffer.from(binario), mime, extension };
 }
 
-module.exports = { sendText, markAsRead, mostrarEscribiendo, notificarRecepcion, credencialesListas, descargarMedia };
+// Autoverificación anti-cruce al arrancar: consulta a Meta qué número
+// corresponde al WHATSAPP_PHONE_NUMBER_ID configurado y lo compara con
+// WHATSAPP_NUMERO_ESPERADO. Si no coinciden, las credenciales son de OTRO
+// número (ej. el de Kaminar Med) y este bot estaría respondiendo por la
+// línea equivocada. Solo avisa (no detiene el servidor): en desarrollo sin
+// credenciales o sin internet no debe estorbar.
+async function verificarNumeroPropio() {
+  if (!credencialesListas() || !config.whatsapp.numeroEsperado) return;
+  const esperado = config.whatsapp.numeroEsperado.replace(/\D/g, '');
+  try {
+    const { data } = await axios.get(
+      `https://graph.facebook.com/${config.whatsapp.graphVersion}/${config.whatsapp.phoneNumberId}`,
+      {
+        params: { fields: 'display_phone_number' },
+        headers: { Authorization: `Bearer ${config.whatsapp.token}` },
+      }
+    );
+    const real = String(data.display_phone_number || '').replace(/\D/g, '');
+    if (real && (real.endsWith(esperado) || esperado.endsWith(real))) {
+      console.log(`[config] Número de WhatsApp verificado: ${real}`);
+    } else {
+      console.error(
+        `[config] ⚠️ NÚMERO CRUZADO: estas credenciales corresponden al número ${real || 'desconocido'}, ` +
+        `pero WHATSAPP_NUMERO_ESPERADO es ${esperado}. Fisiobot debe usar el 51953838656 (KaminarFisio); ` +
+        `el 51928742228 es de Kaminar Med (el otro bot). Corrige WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID en bot/.env.`
+      );
+    }
+  } catch (err) {
+    console.warn(`[config] No se pudo verificar el número de WhatsApp: ${err.message}`);
+  }
+}
+
+module.exports = { sendText, markAsRead, mostrarEscribiendo, notificarRecepcion, credencialesListas, descargarMedia, verificarNumeroPropio };

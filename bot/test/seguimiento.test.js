@@ -79,7 +79,7 @@ test('no envía si el último mensaje es del paciente', () => {
 
 test('no dispara seguimiento sobre mensajes registrados desde la fisioapp', () => {
   const conv = convBase();
-  conv.historial[1].kaminar = true; // reseña anotada por la fisioapp, no es conversación del bot
+  conv.historial[1].kaminar = true; // reseña anotada desde la agenda remota; la flag conserva su nombre por compatibilidad con datos ya guardados
   assert.strictEqual(evaluar(conv, cfgBase(), '51999', AHORA, MEDIODIA_LIMA), null);
 });
 

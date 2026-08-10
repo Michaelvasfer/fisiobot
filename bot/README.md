@@ -10,7 +10,8 @@ prompts/system-prompt.md → Prompt maestro del agente (no editar salvo cambios 
 src/server.js            → Webhook de Meta + comandos de recepción
 src/agent.js             → Llamada a OpenAI con historial y herramientas
 src/tools.js             → consultar_disponibilidad, solicitar_cita, registrar_lead, derivar_recepcion
-src/agenda.js            → Agenda (modo manual; punto de extensión para agenda real)
+src/agenda.js            → Agenda (modo manual + validación contra la agenda real)
+src/fisio.js             → Cliente HTTP hacia KaminarFisio (fisio.kaminar.pe), modo automático
 src/store.js             → Persistencia JSON en ./data (conversaciones, citas, leads)
 src/whatsapp.js          → Cliente de la Cloud API
 scripts/simular.js       → Simulación local de conversaciones sin Meta
@@ -37,11 +38,14 @@ Variables de `.env`:
 | `OPENAI_API_KEY` | API key de OpenAI |
 | `OPENAI_MODEL` | Modelo (por defecto `gpt-4o-mini`) |
 | `WHATSAPP_TOKEN` | Token de acceso de la Cloud API |
-| `WHATSAPP_PHONE_NUMBER_ID` | Phone Number ID del número del consultorio |
+| `WHATSAPP_PHONE_NUMBER_ID` | Phone Number ID del número del centro de fisioterapia (**953838656**) |
+| `WHATSAPP_NUMERO_ESPERADO` | Número que este bot debe tener conectado (`51953838656`); al arrancar se verifica contra Meta y se avisa si las credenciales son de otro número |
 | `WEBHOOK_VERIFY_TOKEN` | Texto secreto que tú defines para verificar el webhook |
 | `RECEPCION_WHATSAPP` | Número de recepción, formato internacional sin `+` (ej. `51987654321`) |
 | `PORT` | Puerto del servidor (por defecto `3000`) |
-| `MODO_AGENDA` | `manual` (cupos en `clinica.json`) o `automatico` |
+| `MODO_AGENDA` | `manual` (cupos en `clinica.json`) o `automatico` (agenda real de KaminarFisio) |
+| `FISIO_API_URL` | URL del endpoint del bot en KaminarFisio: `https://fisio.kaminar.pe/api/bot-agenda` (obligatoria en modo `automatico`) |
+| `FISIO_API_TOKEN` | Token compartido que KaminarFisio valida en el header `x-bot-token` (obligatorio en modo `automatico`) |
 
 ## Probar en local (sin Meta)
 
@@ -75,8 +79,10 @@ Los datos (conversaciones, citas, leads, derivaciones) se guardan en `./data/*.j
 
 ## Modo de agenda
 
-- **Manual (actual)**: el bot solo ofrece los cupos de `clinica.json` y registra la cita como *pendiente de confirmación*. Recepción confirma con `#confirmar`.
-- **Automático**: implementa `consultarDisponibilidad` y el registro en `src/agenda.js` contra tu agenda real (Google Calendar, sistema de citas, etc.) y pon `MODO_AGENDA=automatico`. El resto del bot no cambia.
+- **Manual**: el bot solo ofrece los cupos de `clinica.json` y registra la cita como *pendiente de confirmación*. Recepción confirma con `#confirmar`.
+- **Automático**: el bot consulta y registra citas en la agenda real de **KaminarFisio** (`fisio.kaminar.pe`) vía `FISIO_API_URL` / `FISIO_API_TOKEN` (cliente HTTP en `src/fisio.js`). Pon `MODO_AGENDA=automatico`. El resto del bot no cambia.
+
+> **Ojo — no cruzar sistemas:** `kaminar.pe` (sin `fisio.`) es **Kaminar Med**, el sistema de otro consultorio con su propio bot ("agente whatsapp") y su propio número de WhatsApp (**928742228**). Fisiobot usa únicamente `fisio.kaminar.pe` y su propio número (**953838656**, `WHATSAPP_PHONE_NUMBER_ID`). En modo automático el bot valida el host de `FISIO_API_URL` al arrancar y se niega a iniciar si apunta a otro dominio; además verifica contra Meta que las credenciales de WhatsApp correspondan a `WHATSAPP_NUMERO_ESPERADO` y avisa si están cruzadas.
 
 ## Límites conocidos
 

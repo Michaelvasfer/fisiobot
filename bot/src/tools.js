@@ -1,7 +1,7 @@
 // Definición y ejecución de las herramientas (function calling) del agente.
 const { config } = require('./config');
 const agenda = require('./agenda');
-const kaminar = require('./kaminar');
+const fisio = require('./fisio');
 const whatsapp = require('./whatsapp');
 const { estadoDe } = require('./promptBuilder');
 
@@ -11,11 +11,12 @@ const definiciones = [
     function: {
       name: 'consultar_disponibilidad',
       description:
-        'Devuelve las opciones de horario para ofrecer al paciente (MÁXIMO 2 por llamada: una de mañana y otra de tarde cuando haya). Úsala SIEMPRE antes de mencionar horarios. Si el paciente rechaza las opciones ofrecidas, vuelve a llamarla pasándolas en excluir para obtener la siguiente. Para un paciente de CAMPAÑA, pasa en fecha la fecha exacta de la jornada y solo_fecha=true: solo se ofrecen horas de ese día.',
+        'Devuelve las opciones de horario para ofrecer al paciente (MÁXIMO 2 por llamada: una de mañana y otra de tarde cuando haya). Úsala SIEMPRE antes de mencionar horarios. Si el paciente pide una hora concreta (ej. "mañana a las 11"), pasa fecha y hora: la herramienta verifica ESE cupo exacto y te dice si está libre — NUNCA digas que un horario pedido no está disponible sin haberlo verificado así. Si el paciente rechaza las opciones ofrecidas, vuelve a llamarla pasándolas en excluir para obtener la siguiente. Para un paciente de CAMPAÑA, pasa en fecha la fecha exacta de la jornada y solo_fecha=true: solo se ofrecen horas de ese día.',
       parameters: {
         type: 'object',
         properties: {
           fecha: { type: 'string', description: 'Día o fecha que el paciente pidió (ej. "hoy", "mañana", "el viernes") o la fecha de la jornada de campaña. Si el paciente mencionó un día, DEBES pasarlo aquí siempre; se priorizan esos cupos. Solo omítelo si el paciente no mencionó ningún día.' },
+          hora: { type: 'string', description: 'Hora concreta que el paciente pidió (ej. "11:00 a. m.", "11 am", "15:00"). DEBES pasarla junto con fecha cuando el paciente menciona una hora específica: así se verifica ese cupo exacto en vez de adivinar con las primeras horas del día.' },
           solo_fecha: { type: 'boolean', description: 'Opcional: si es true, devuelve ÚNICAMENTE cupos de la fecha indicada (úsalo con la fecha de la jornada para pacientes de campaña).' },
           excluir: { type: 'array', items: { type: 'string' }, description: 'Opciones ya ofrecidas que el paciente rechazó, copiadas tal cual las recibiste.' },
         },
@@ -144,6 +145,45 @@ async function ejecutar(nombre, args, ctx) {
           disponible: false,
           mensaje: 'No hay horarios disponibles en este momento. Ofrece al paciente anotarlo en la LISTA DE ESPERA con tus palabras: "En cuanto se libere un cupo, le escribo por este medio, ¿le parece?". Si acepta, usa la herramienta anotar_lista_espera. Si prefiere hablar con una persona, deriva a recepción.',
         });
+      }
+      // Consulta puntual: el paciente pidió fecha Y hora ("mañana a las 11").
+      // Se verifica ESE cupo exacto contra la agenda. Sin esto el modelo solo
+      // veía las 2 primeras horas del día y concluía (mal) que la hora pedida
+      // no existía.
+      if (args.fecha && args.hora && !args.solo_fecha) {
+        const relativa = agenda.resolverFechaRelativa(args.fecha);
+        const fechaPedida = relativa || args.fecha;
+        const valido = config.modoAgenda === 'automatico' && fisio.lista()
+          ? await agenda.cupoValidoFisio(fechaPedida, args.hora)
+          : agenda.cupoValido(fechaPedida, args.hora, store);
+        const dia = (disp.cupos || []).find((c) => agenda.mismaFecha(c.fecha, fechaPedida));
+        const horaExacta = dia && dia.horas.find(
+          (h) => agenda.normalizarHora(h) === agenda.normalizarHora(args.hora)
+        );
+        if (valido && dia && horaExacta) {
+          const cupo = `${dia.fecha} a las ${horaExacta}`;
+          const alternativa = dia.horas.find(
+            (h) => agenda.normalizarHora(h) !== agenda.normalizarHora(horaExacta)
+          );
+          return JSON.stringify({
+            disponible: true,
+            cupo_pedido: cupo,
+            ...(alternativa ? { alternativa_mismo_dia: `${dia.fecha} a las ${alternativa}` } : {}),
+            mensaje: `El horario que pidió el paciente SÍ está disponible: ${cupo}. Confírmalo directamente (ej. "Sí, tengo disponible el ${cupo}") y, si acepta, registra con solicitar_cita copiando exactamente esa fecha y hora. La alternativa es solo una opción adicional.`,
+          });
+        }
+        if (dia && dia.horas.length > 0) {
+          // El cupo exacto no está libre (lleno, fuera de bloque o ya pasó):
+          // decirlo claramente y ofrecer alternativas del mismo día.
+          const alternativas = dia.horas.slice(0, 2).map((h) => `${dia.fecha} a las ${h}`);
+          return JSON.stringify({
+            disponible: true,
+            cupo_pedido_ocupado: true,
+            alternativas,
+            mensaje: 'El horario exacto que pidió el paciente NO está disponible. Infórmalo con tus palabras y ofrece SOLO estas alternativas del mismo día.',
+          });
+        }
+        // Ese día no tiene ningún cupo: sigue el flujo normal (ofrece los días más próximos).
       }
       // La agenda completa NO se devuelve: solo 2 opciones por llamada, para que
       // el modelo no pueda soltar la lista entera al paciente.
@@ -322,23 +362,23 @@ async function ejecutar(nombre, args, ctx) {
       }
 
       // --- Reserva de consulta médica habitual ---
-      // Modo automático: la agenda real es Kaminar Med; el registro crea
-      // paciente + cita ahí y se guarda una copia local con el id remoto.
-      let kaminarId = null;
+      // Modo automático: la agenda real es KaminarFisio (fisio.kaminar.pe); el
+      // registro crea paciente + cita ahí y se guarda una copia local con el id remoto.
+      let fisioId = null;
       let codigoPaciente = null;
-      if (config.modoAgenda === 'automatico' && kaminar.lista()) {
-        if (!(await agenda.cupoValidoKaminar(args.fecha, args.hora))) {
+      if (config.modoAgenda === 'automatico' && fisio.lista()) {
+        if (!(await agenda.cupoValidoFisio(args.fecha, args.hora))) {
           return JSON.stringify({
             exito: false,
             error: 'La fecha u hora ya no está disponible en la agenda. Vuelve a llamar a consultar_disponibilidad y ofrece solo esas opciones. Si el paciente insiste en esa hora o hay cualquier inconveniente con el horario, NO fuerces el registro: deriva la conversación a recepción con derivar_recepcion para que una persona lo reagende manualmente.',
           });
         }
         try {
-          const r = await kaminar.registrar({
+          const r = await fisio.registrar({
             nombre: args.nombre, dni: args.dni, motivo,
             fecha: args.fecha, hora: args.hora, telefono,
           });
-          kaminarId = r.citaId || null;
+          fisioId = r.citaId || null;
           codigoPaciente = r.codigoPaciente || null;
         } catch (err) {
           return JSON.stringify({
@@ -362,7 +402,10 @@ async function ejecutar(nombre, args, ctx) {
         hora: args.hora,
         tipoAtencion: 'CONSULTA_MEDICA',
         precio: config.clinica.identidad.precioConsulta,
-        ...(kaminarId ? { kaminarId } : {}),
+        // La clave guardada se queda como "kaminarId" por compatibilidad: las
+        // citas ya persistidas en data/citas.json usan ese nombre. Se refiere
+        // al id de la cita en la agenda remota (hoy KaminarFisio).
+        ...(fisioId ? { kaminarId: fisioId } : {}),
       });
       store.establecerEstado(telefono, 'CITA_SOLICITADA');
       store.guardarLead(telefono, { nombre: args.nombre, dni: args.dni, motivo, nivel_interes: 'INTERES_ALTO' });
@@ -411,11 +454,11 @@ async function ejecutar(nombre, args, ctx) {
     }
 
     case 'cancelar_cita': {
-      if (!(config.modoAgenda === 'automatico' && kaminar.lista())) {
+      if (!(config.modoAgenda === 'automatico' && fisio.lista())) {
         return JSON.stringify({ exito: false, error: 'La cancelación automática no está disponible en este momento. Deriva a recepción.' });
       }
       try {
-        const r = await kaminar.cancelarPorTelefono(telefono);
+        const r = await fisio.cancelarPorTelefono(telefono);
         if (!r.ok) {
           return JSON.stringify({ exito: false, error: 'No encontré una cita próxima a nombre de este paciente. Confirma sus datos o deriva a recepción.' });
         }

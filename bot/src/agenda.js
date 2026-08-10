@@ -19,7 +19,7 @@
 //   válido se "vencería" a mitad de la conversación y el bot rechazaría la
 //   confirmación del paciente con un "ya no está disponible".
 const { config } = require('./config');
-const kaminar = require('./kaminar');
+const fisio = require('./fisio');
 
 // Margen mínimo (minutos) para ACEPTAR el registro de un cupo de hoy.
 const MARGEN_REGISTRO_MINUTOS = 30;
@@ -246,10 +246,11 @@ function disponibilidadPlantilla(store) {
 // Devuelve los cupos disponibles tal como se los debe mostrar el agente al paciente
 // (ya sin fechas pasadas, sin las horas de hoy que ya pasaron y sin los horarios
 // bloqueados por citas confirmadas o pendientes recientes).
-// En modo AUTOMÁTICO los cupos vienen de la agenda real de Kaminar Med.
+// En modo AUTOMÁTICO los cupos vienen de la agenda real de KaminarFisio
+// (fisio.kaminar.pe).
 async function consultarDisponibilidad(store) {
-  if (config.modoAgenda === 'automatico' && kaminar.lista()) {
-    const r = await kaminar.disponibilidad(antelacionMinutos());
+  if (config.modoAgenda === 'automatico' && fisio.lista()) {
+    const r = await fisio.disponibilidad(antelacionMinutos());
     return { modo: config.modoAgenda, cupos: r.cupos || [], sinCupos: Boolean(r.sinCupos) };
   }
   // Si hay plantilla semanal configurada, la agenda se calcula sola.
@@ -270,8 +271,8 @@ async function consultarDisponibilidad(store) {
 
 // Validación de fecha/hora contra la agenda real (modo automático). Usa el
 // margen de registro (30 min), no la antelación completa de oferta.
-async function cupoValidoKaminar(fecha, hora) {
-  const r = await kaminar.disponibilidad(MARGEN_REGISTRO_MINUTOS);
+async function cupoValidoFisio(fecha, hora) {
+  const r = await fisio.disponibilidad(MARGEN_REGISTRO_MINUTOS);
   const dia = (r.cupos || []).find((c) => mismaFecha(c.fecha, fecha));
   if (!dia) return false;
   return dia.horas.some((h) => normalizarHora(h) === normalizarHora(hora));
@@ -329,4 +330,4 @@ function claveCronologica(opcion) {
   return (f ? f.getTime() : Number.MAX_SAFE_INTEGER - 172800000) + (h === null ? 0 : h * 60000);
 }
 
-module.exports = { consultarDisponibilidad, cupoValido, cupoValidoKaminar, cupoOcupado, cupoYaPaso, resolverFechaRelativa, citaPendienteEnCupo, claveCronologica };
+module.exports = { consultarDisponibilidad, cupoValido, cupoValidoFisio, cupoOcupado, cupoYaPaso, resolverFechaRelativa, citaPendienteEnCupo, claveCronologica, mismaFecha, normalizarHora };

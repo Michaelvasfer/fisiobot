@@ -1,16 +1,18 @@
-// Cliente HTTP del bot hacia la agenda real de Kaminar Med (POST/GET /api/bot-agenda).
-// Se activa con KAMINAR_API_URL y KAMINAR_API_TOKEN en .env (MODO_AGENDA=automatico).
+// Cliente HTTP del bot hacia la agenda real de KaminarFisio, fisio.kaminar.pe
+// (POST/GET /api/bot-agenda). NO confundir con kaminar.pe (Kaminar Med): ese es
+// el sistema de otro consultorio, con su propio bot y su propio número.
+// Se activa con FISIO_API_URL y FISIO_API_TOKEN en .env (MODO_AGENDA=automatico).
 const { config } = require('./config');
 
 function lista() {
-  return Boolean(config.kaminar && config.kaminar.url && config.kaminar.token);
+  return Boolean(config.fisio && config.fisio.url && config.fisio.token);
 }
 
 async function llamar(params, opciones) {
-  const url = `${config.kaminar.url}${params ? `?${params}` : ''}`;
+  const url = `${config.fisio.url}${params ? `?${params}` : ''}`;
   const res = await fetch(url, {
     method: opciones && opciones.method ? opciones.method : 'GET',
-    headers: { 'x-bot-token': config.kaminar.token, 'Content-Type': 'application/json' },
+    headers: { 'x-bot-token': config.fisio.token, 'Content-Type': 'application/json' },
     body: opciones && opciones.body ? JSON.stringify(opciones.body) : undefined,
   });
   const datos = await res.json().catch(() => ({}));
