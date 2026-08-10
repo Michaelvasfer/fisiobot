@@ -92,9 +92,44 @@ function contextoCampania(mensaje) {
   return partes.join(' ');
 }
 
+// IDs de mensajes ya procesados: Meta a veces reenvía el mismo webhook y sin
+// esta guarda el bot respondería dos veces lo mismo. Se conservan los últimos
+// 500 (las reentregas ocurren en ventanas cortas).
+const MENSAJES_VISTOS = new Set();
+function esDuplicado(id) {
+  if (!id) return false;
+  if (MENSAJES_VISTOS.has(id)) return true;
+  MENSAJES_VISTOS.add(id);
+  if (MENSAJES_VISTOS.size > 500) MENSAJES_VISTOS.delete(MENSAJES_VISTOS.values().next().value);
+  return false;
+}
+
 async function procesarMensajeEntrante(mensaje, value) {
   const telefono = mensaje.from;
   const texto = mensaje.text && mensaje.text.body ? mensaje.text.body.trim() : '';
+
+  // Reacciones con emoji a un mensaje (type 'reaction'): no son consultas.
+  // Antes caían en el aviso genérico de "contenido no textual" y el bot
+  // respondía "no pude interpretar el audio" cada vez que el paciente
+  // reaccionaba con un emoji.
+  if (mensaje.type === 'reaction') {
+    console.log(`[webhook] reacción de ${telefono}; no requiere respuesta.`);
+    return;
+  }
+
+  // Meta puede reentregar el mismo mensaje; cada id se procesa una sola vez.
+  if (esDuplicado(mensaje.id)) {
+    console.log(`[webhook] mensaje duplicado ${mensaje.id} de ${telefono}; se ignora.`);
+    return;
+  }
+
+  // Todo lo que no es texto queda en el log con su payload completo: los tipos
+  // raros (p. ej. códigos de verificación que Meta envía al número del bot o
+  // mensajes 'unsupported') no se ven en el panel, y esta es la única vía para
+  // verificarlos.
+  if (mensaje.type !== 'text') {
+    console.log(`[webhook] mensaje tipo '${mensaje.type}' de ${telefono}:`, JSON.stringify(mensaje));
+  }
 
   // 1) Comandos de recepción (desde el número configurado en RECEPCION_WHATSAPP).
   if (telefono === config.recepcionWhatsapp && texto.startsWith('#')) {
@@ -184,7 +219,9 @@ async function procesarMensajeEntrante(mensaje, value) {
       sticker: 'El paciente envió un sticker. Continúa la conversación normalmente.',
       location: 'El paciente compartió su ubicación. Agradécela y continúa la conversación.',
     };
-    const aviso = avisos[mensaje.type] || 'El paciente envió un contenido no textual. Pide que escriba su consulta.';
+    // El tipo crudo queda en la nota para que recepción pueda verificar en el
+    // panel qué envió el paciente (el panel lo muestra como etiqueta legible).
+    const aviso = avisos[mensaje.type] || `El paciente envió un contenido no textual (tipo: ${mensaje.type}). Pide que escriba su consulta.`;
     const respuesta = await procesarMensaje(telefono, '', store, aviso);
     if (respuesta) await responderHumano(telefono, respuesta);
     return;
@@ -338,4 +375,4 @@ if (require.main === module) {
   require('./seguimiento').iniciar(store);
 }
 
-module.exports = { app, store };
+module.exports = { app, store, esDuplicado };

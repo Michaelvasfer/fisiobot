@@ -45,6 +45,28 @@ interface FullConversation {
   campania: string | null
 }
 
+// El contenido sin texto (audio, imagen, sticker...) se guarda como nota
+// "[Sistema: ...]" con el cuerpo vacío; se muestra una etiqueta legible en vez
+// de la nota cruda o una burbuja en blanco. La nota completa va en el tooltip.
+function textoVisible(contenido: string): { texto: string; detalle: string | null } {
+  const crudo = contenido || ''
+  if (!crudo.startsWith('[Sistema:')) return { texto: crudo, detalle: null }
+  const m = /^\[Sistema: ([\s\S]*?)\]\n\n/.exec(crudo)
+  const nota = m ? m[1] : crudo.replace(/^\[Sistema: ?/, '').replace(/\]\s*$/, '')
+  const resto = m ? crudo.slice(m[0].length).trim() : ''
+  if (resto) return { texto: resto, detalle: nota }
+  let etiqueta = '📎 Contenido no textual'
+  if (/audio|nota de voz/i.test(nota)) etiqueta = '🎙️ Audio'
+  else if (/imagen/i.test(nota)) etiqueta = '🖼️ Imagen'
+  else if (/documento/i.test(nota)) etiqueta = '📄 Documento'
+  else if (/video/i.test(nota)) etiqueta = '🎥 Video'
+  else if (/sticker/i.test(nota)) etiqueta = 'Sticker'
+  else if (/ubicaci/i.test(nota)) etiqueta = '📍 Ubicación'
+  const tipo = /\(tipo: ([^)]+)\)/.exec(nota)
+  if (tipo) etiqueta += ` (tipo: ${tipo[1]})`
+  return { texto: etiqueta, detalle: nota }
+}
+
 const estadoConfig: Record<string, { color: string; label: string }> = {
   NUEVO: { color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', label: 'Nuevo' },
   CALIFICANDO: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400', label: 'Calificando' },
@@ -311,7 +333,7 @@ export function ConversationsView() {
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                      {conv.ultimoMensaje || '—'}
+                      {textoVisible(conv.ultimoMensaje).texto || '—'}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5">
                       {intCfg && (
@@ -391,6 +413,7 @@ export function ConversationsView() {
                 ) : chatData?.historial && chatData.historial.length > 0 ? (
                   chatData.historial.map((msg, i) => {
                     const isUser = msg.role === 'user'
+                    const v = textoVisible(msg.content)
                     const prev = chatData.historial[i - 1]
                     const showTime = !prev || !prev.ts || (msg.ts && prev.ts && new Date(msg.ts).getTime() - new Date(prev.ts).getTime() > 300000)
                     return (
@@ -411,8 +434,8 @@ export function ConversationsView() {
                             isUser
                               ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-br-md'
                               : 'bg-muted/80 rounded-bl-md'
-                          }`}>
-                            {msg.content}
+                          }`} title={v.detalle || undefined}>
+                            {v.texto}
                             {msg.manual && (
                               <span className="block text-[9px] mt-1 opacity-60">✍️ enviado manualmente</span>
                             )}

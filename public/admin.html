@@ -555,7 +555,7 @@
         div.innerHTML = `
           <div class="tel">${c.nombre ? escaparHtml(c.nombre) + ' · ' : ''}${c.telefono}</div>
           ${c.motivo ? `<div class="prev" style="color:#0f766e">${escaparHtml(c.motivo)}</div>` : ''}
-          <div class="prev">${(c.ultimoRol === 'user' ? '' : '↩ ') }${c.ultimoMensaje}</div>
+          <div class="prev">${(c.ultimoRol === 'user' ? '' : '↩ ') }${escaparHtml(textoVisible(c.ultimoMensaje).texto)}</div>
           <div class="meta">${hora}
             ${c.handoff ? '<span class="badge pausa">⏸ bot en pausa</span>' : ''}
             ${c.citaPendiente ? '<span class="badge" style="background:#fee2e2;color:#b91c1c">⏳ cita por confirmar</span>' : ''}
@@ -566,6 +566,29 @@
         div.onclick = () => seleccionarChat(c.telefono);
         cont.appendChild(div);
       });
+    }
+
+    // El contenido sin texto (audio, imagen, sticker...) se guarda como nota
+    // "[Sistema: ...]" con el cuerpo vacío; en el panel se muestra una etiqueta
+    // legible en vez de una burbuja en blanco. La nota completa queda en el
+    // tooltip (title) para que recepción pueda verificar qué envió el paciente.
+    function textoVisible(contenido) {
+      const crudo = contenido || '';
+      if (!crudo.startsWith('[Sistema:')) return { texto: crudo, detalle: null };
+      const m = /^\[Sistema: ([\s\S]*?)\]\n\n/.exec(crudo);
+      const nota = m ? m[1] : crudo.replace(/^\[Sistema: ?/, '').replace(/\]\s*$/, '');
+      const resto = m ? crudo.slice(m[0].length).trim() : '';
+      if (resto) return { texto: resto, detalle: nota };
+      let etiqueta = '📎 Contenido no textual';
+      if (/audio|nota de voz/i.test(nota)) etiqueta = '🎙️ Audio';
+      else if (/imagen/i.test(nota)) etiqueta = '🖼️ Imagen';
+      else if (/documento/i.test(nota)) etiqueta = '📄 Documento';
+      else if (/video/i.test(nota)) etiqueta = '🎥 Video';
+      else if (/sticker/i.test(nota)) etiqueta = 'Sticker';
+      else if (/ubicaci/i.test(nota)) etiqueta = '📍 Ubicación';
+      const tipo = /\(tipo: ([^)]+)\)/.exec(nota);
+      if (tipo) etiqueta += ` (tipo: ${tipo[1]})`;
+      return { texto: etiqueta, detalle: nota };
     }
 
     async function seleccionarChat(telefono) {
@@ -589,8 +612,10 @@
         const div = document.createElement('div');
         div.className = 'burbuja ' + (m.role === 'user' ? 'paciente' : m.manual ? 'manual' : 'bot');
         const hora = m.ts ? new Date(m.ts).toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }) : '';
-        div.textContent = m.content.replace(/^\[Sistema:.*?\]\n\n/s, '');
+        const v = textoVisible(m.content);
+        div.textContent = v.texto;
         if (m.manual) div.title = 'Enviado manualmente por recepción';
+        else if (v.detalle) div.title = v.detalle;
         if (hora) {
           const span = document.createElement('span');
           span.className = 'hora';
