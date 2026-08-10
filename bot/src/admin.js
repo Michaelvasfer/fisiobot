@@ -132,11 +132,17 @@ module.exports = function crearRouterAdmin(store, whatsapp) {
   // --- API: registrar un mensaje enviado FUERA del bot (p. ej. la solicitud
   // de reseña que KaminarFisio manda directo por la Cloud API) para que se vea
   // en el chat del panel. NO envía nada por WhatsApp; solo lo anota.
+  // El mismo mensaje se anota UNA SOLA vez por conversación: si la agenda
+  // remota reintenta el aviso (reseña, recordatorio), no se duplica en el
+  // historial del panel.
   // La flag se llama "kaminar" por compatibilidad con el historial ya guardado
   // en data/conversaciones.json. ---
   router.post('/api/conversaciones/:telefono/registrar', (req, res) => {
     const texto = (req.body && req.body.texto ? String(req.body.texto) : '').trim();
     if (!texto) return res.status(400).json({ error: 'texto vacío' });
+    const historial = store.obtenerConversacion(req.params.telefono).historial || [];
+    const yaAnotado = historial.some((m) => m.kaminar && String(m.content || '').trim() === texto);
+    if (yaAnotado) return res.json({ ok: true, duplicado: true });
     store.agregarMensaje(req.params.telefono, 'assistant', texto, { kaminar: true });
     res.json({ ok: true });
   });
