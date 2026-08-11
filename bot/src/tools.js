@@ -200,6 +200,7 @@ async function ejecutar(nombre, args, ctx) {
       // Priorizar la fecha que el paciente pidió, si la hubiera. Las fechas
       // relativas ("mañana", "el viernes") se resuelven a un día concreto primero.
       let sinCuposEnFechaPedida = null;
+      let fechaPedidaConCupos = null;
       if (args.fecha) {
         const relativa = agenda.resolverFechaRelativa(args.fecha);
         const buscada = norm(relativa || args.fecha);
@@ -219,6 +220,10 @@ async function ejecutar(nombre, args, ctx) {
             // el modelo debe avisar que ese día no hay atención.
             sinCuposEnFechaPedida = relativa;
           } else {
+            // El día que pidió SÍ tiene cupos: se lo decimos explícitamente al
+            // modelo para que no contradiga (decía "mañana no tengo" mientras
+            // ofrecía cupos de mañana).
+            if (coincidentes.length > 0) fechaPedidaConCupos = relativa || args.fecha;
             // Cuando el paciente pide una fecha concreta, se le muestran solo opciones
             // de esa fecha (hasta 2). Si no hay suficientes, se completan con otras fechas.
             aplanados = coincidentes.length >= 2
@@ -266,6 +271,11 @@ async function ejecutar(nombre, args, ctx) {
         ...(sinCuposEnFechaPedida
           ? {
               aviso_fecha_pedida: `El día que pidió el paciente (${sinCuposEnFechaPedida}) NO tiene cupos. Dile claramente que ese día no hay atención y ofrece estas alternativas como las fechas más próximas disponibles; no las presentes como si fueran del día que pidió.`,
+            }
+          : {}),
+        ...(fechaPedidaConCupos
+          ? {
+              fecha_pedida_con_cupos: `Las opciones ofrecidas SÍ corresponden al día que pidió el paciente (${fechaPedidaConCupos}). Preséntalas como opciones de ese día; PROHIBIDO decir que ese día no hay disponibilidad.`,
             }
           : {}),
         instruccion_presentacion:

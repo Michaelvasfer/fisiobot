@@ -141,3 +141,23 @@ test('consultar_disponibilidad con fecha y hora avisa cuando el cupo exacto est�
     restaurar();
   }
 });
+
+// Regresión: el paciente pidió "para mañana" y el bot dijo "para mañana no
+// tengo disponibilidad" mientras ofrecía cupos de mañana. Cuando la fecha
+// pedida SÍ tiene cupos, la herramienta debe afirmarlo explícitamente.
+test('consultar_disponibilidad afirma cuando la fecha pedida SÍ tiene cupos', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const r = JSON.parse(await tools.ejecutar('consultar_disponibilidad', {
+      fecha: 'mañana',
+    }, { telefono: '51999000555', store }));
+
+    assert.strictEqual(r.disponible, true);
+    assert.ok(r.fecha_pedida_con_cupos, 'debe afirmar que la fecha pedida tiene cupos');
+    assert.match(r.fecha_pedida_con_cupos, /SÍ corresponden al día que pidió/);
+    assert.ok(!r.aviso_fecha_pedida, 'no debe mezclar el aviso de día sin cupos');
+  } finally {
+    restaurar();
+  }
+});
