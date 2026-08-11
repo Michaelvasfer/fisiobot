@@ -142,6 +142,34 @@ test('consultar_disponibilidad con fecha y hora avisa cuando el cupo exacto est�
   }
 });
 
+// Regresión: en modo manual ni el registro ni el anti-duplicado deben decir
+// "confirmada"; y el anti-duplicado no debe crear una segunda cita.
+test('solicitar_cita no duplica la solicitud pendiente del mismo paciente y cupo', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const disp = await agenda.consultarDisponibilidad(store);
+    const dia = disp.cupos[0];
+    const hora = dia.horas[0];
+    const args = {
+      nombre: 'Michael Vásquez', dni: '44681550', motivo: 'Test',
+      fecha: dia.fecha, hora, tipo_atencion: 'CONSULTA_MEDICA',
+    };
+    const ctx = { telefono: '51999000666', store };
+
+    const primero = JSON.parse(await tools.ejecutar('solicitar_cita', args, ctx));
+    assert.strictEqual(primero.exito, true);
+    assert.match(primero.mensaje, /recepción le confirmará/);
+
+    const segundo = JSON.parse(await tools.ejecutar('solicitar_cita', args, ctx));
+    assert.strictEqual(segundo.exito, true);
+    assert.match(segundo.mensaje, /No la dupliques/);
+    assert.strictEqual(store.listarCitas().length, 1);
+  } finally {
+    restaurar();
+  }
+});
+
 // Regresión: el paciente pidió "para mañana" y el bot dijo "para mañana no
 // tengo disponibilidad" mientras ofrecía cupos de mañana. Cuando la fecha
 // pedida SÍ tiene cupos, la herramienta debe afirmarlo explícitamente.

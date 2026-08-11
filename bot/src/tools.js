@@ -330,10 +330,13 @@ async function ejecutar(nombre, args, ctx) {
       // éxito sin duplicar la cita (el modelo a veces reintenta el registro).
       const pendientePropia = agenda.citaPendienteEnCupo(store, telefono, args.fecha, args.hora);
       if (pendientePropia) {
+        const automatico = config.modoAgenda === 'automatico' && fisio.lista();
         return JSON.stringify({
           exito: true,
-          pendienteDeConfirmacion: true,
-          mensaje: `Este paciente ya tiene una solicitud pendiente para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. No la dupliques: indícale que su solicitud sigue registrada y que recepción le confirmará por este mismo medio. No digas que está confirmada.`,
+          pendienteDeConfirmacion: !automatico,
+          mensaje: automatico
+            ? `Este paciente YA tiene la sesión agendada para el ${pendientePropia.fecha} a las ${pendientePropia.hora} (quedó registrada en la agenda). No la dupliques: confírmale con claridad que su sesión quedó agendada para esa fecha y hora (ej. "Su sesión quedó agendada para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. Le esperamos.").`
+            : `Este paciente ya tiene una solicitud pendiente para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. No la dupliques: indícale que su solicitud sigue registrada y que recepción le confirmará por este mismo medio. No digas que está confirmada.`,
         });
       }
       const esCampania = args.tipo_atencion === 'CAMPAÑA_MEDICA' && args.campania;
@@ -455,10 +458,13 @@ async function ejecutar(nombre, args, ctx) {
           `Para confirmarla responde: #confirmar ${telefono}`,
         ].join('\n')
       );
+      const esAutomatico = config.modoAgenda === 'automatico' && fisio.lista();
       return JSON.stringify({
         exito: true,
-        pendienteDeConfirmacion: false,
-        mensaje: `Sesión agendada y confirmada para el ${args.fecha} a las ${args.hora}. Informa al paciente que su sesión quedó CONFIRMADA (ej: "Su sesión quedó agendada para el ${args.fecha} a las ${args.hora}. Le esperamos.").`,
+        pendienteDeConfirmacion: !esAutomatico,
+        mensaje: esAutomatico
+          ? `Sesión agendada y confirmada para el ${args.fecha} a las ${args.hora}. Informa al paciente que su sesión quedó CONFIRMADA (ej: "Su sesión quedó agendada para el ${args.fecha} a las ${args.hora}. Le esperamos.").`
+          : `Solicitud registrada para el ${args.fecha} a las ${args.hora}. Modo manual: la cita NO está confirmada todavía. Informa al paciente que su solicitud quedó registrada y que recepción le confirmará la reserva por este mismo medio; no digas que está confirmada.`,
       });
     }
 
