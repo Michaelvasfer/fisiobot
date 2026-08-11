@@ -432,7 +432,9 @@
       const instruccionesAdicionales = document.getElementById('instruccionesAdicionales').value
         .split('\n').map((t) => t.trim()).filter(Boolean);
 
-      return { identidad, cuposDisponibles, mediosDePago, campaniasActivas, instruccionesAdicionales };
+      // Conserva las secciones que el panel no edita (agenda, horarioGeneral, etc.):
+      // recolectar partía de cero y guardar borraba esas claves de clinica.json.
+      return { ...config, identidad, cuposDisponibles, mediosDePago, campaniasActivas, instruccionesAdicionales };
     }
 
     async function guardar() {
