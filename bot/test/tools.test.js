@@ -40,6 +40,26 @@ test('solicitar_cita rechaza un DNI que no tiene 8 dígitos y se lo hace notar',
   assert.strictEqual(store.listarCitas().length, 0);
 });
 
+// Regresión: el modelo usaba el DNI viejo de 9 dígitos aunque el paciente ya
+// había enviado la corrección de 8. El rechazo debe señalarle el candidato.
+test('al rechazar el DNI largo, solicitar_cita sugiere el número de 8 dígitos ya enviado', async () => {
+  const store = storeTemporal();
+  const tel = '51999000444';
+  store.agregarMensaje(tel, 'user', 'Mi DNI es 738120333');
+  store.agregarMensaje(tel, 'assistant', 'Su DNI tiene un dígito de más, ¿puede verificarlo?');
+  store.agregarMensaje(tel, 'user', '73812033');
+
+  const resultado = JSON.parse(await tools.ejecutar('solicitar_cita', {
+    nombre: 'Jhakeli Chamán Guevara', dni: '738120333', motivo: 'Dolor de espalda',
+    fecha: 'miércoles 12 de agosto', hora: '3:00 p. m.', tipo_atencion: 'CONSULTA_MEDICA',
+  }, { telefono: tel, store }));
+
+  assert.strictEqual(resultado.exito, false);
+  assert.match(resultado.error, /73812033/);
+  assert.match(resultado.error, /sin pedírselo otra vez/);
+  assert.strictEqual(store.listarCitas().length, 0);
+});
+
 // ─── registrar_lead como memoria permanente ───
 // Regresión: el bot olvidaba nombre/DNI en conversaciones largas porque el lead
 // no aceptaba dni y una llamada parcial (sin nombre) borraba el nombre guardado.

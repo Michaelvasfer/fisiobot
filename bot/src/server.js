@@ -237,8 +237,13 @@ async function procesarMensajeEntrante(mensaje, value) {
   // Paciente recurrente: el agente recibe sus datos registrados para no pedirlos de nuevo.
   const lead = store.obtenerLead(telefono);
   if (lead && (lead.nombre || lead.dni)) {
+    // Un DNI numérico que no tiene 8 dígitos es un dato inválido (p. ej. el paciente
+    // lo corrigió después): no se inyecta para que el modelo no registre el dato malo.
+    const dniLead = lead.dni && (!/^\d+$/.test(String(lead.dni).trim()) || String(lead.dni).trim().length === 8)
+      ? lead.dni
+      : null;
     contextos.push(
-      `Paciente recurrente con datos registrados: nombre "${lead.nombre || 'desconocido'}"${lead.dni ? `, DNI ${lead.dni}` : ''}. Salúdalo por su nombre con confianza (ej. "¿Cómo está, Sr. ${(lead.nombre || '').split(' ')[0]}?") y usa sus datos para agendar SIN pedírselos ni preguntarle si es él. Puede ser una consulta nueva y distinta a la anterior; pregunta el motivo como siempre.`
+      `Paciente recurrente con datos registrados: nombre "${lead.nombre || 'desconocido'}"${dniLead ? `, DNI ${dniLead}` : ''}. Salúdalo por su nombre con confianza (ej. "¿Cómo está, Sr. ${(lead.nombre || '').split(' ')[0]}?") y usa sus datos para agendar SIN pedírselos ni preguntarle si es él. Puede ser una consulta nueva y distinta a la anterior; pregunta el motivo como siempre.${lead.dni && !dniLead ? ' OJO: el DNI que tenías registrado de este paciente era inválido; si necesitas el DNI, usa la corrección que el paciente haya enviado en la conversación (8 dígitos).' : ''}`
     );
   }
   if (nombrePerfil && !conv.historial.length) {

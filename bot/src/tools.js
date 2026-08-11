@@ -297,9 +297,22 @@ async function ejecutar(nombre, args, ctx) {
       // (Solo aplica a DNI puro numérico; un carné de extranjería con letras pasa.)
       const dniTexto = String(args.dni).trim();
       if (/^\d+$/.test(dniTexto) && dniTexto.length !== 8) {
+        // El modelo a veces usa un DNI viejo de la conversación aunque el paciente
+        // ya envió la corrección: se busca en el historial un número de 8 dígitos
+        // y se le entrega como candidato para que registre sin repreguntar.
+        const historial = store.obtenerConversacion(telefono).historial || [];
+        const candidatos = [...new Set(
+          historial
+            .filter((m) => m.role === 'user')
+            .flatMap((m) => String(m.content).match(/\b\d{8}\b/g) || [])
+        )].filter((d) => d !== dniTexto);
         return JSON.stringify({
           exito: false,
-          error: `El DNI recibido ("${dniTexto}") tiene ${dniTexto.length} dígitos y el DNI peruano tiene exactamente 8. NO lo registres así: hazle notar al paciente la cantidad de dígitos y pídele que verifique su DNI (puede tener un dígito de más o de menos), luego vuelve a llamar a solicitar_cita con el DNI corregido.`,
+          error:
+            `El DNI recibido ("${dniTexto}") tiene ${dniTexto.length} dígitos y el DNI peruano tiene exactamente 8. NO lo registres así.` +
+            (candidatos.length > 0
+              ? ` OJO: en la conversación el paciente ya envió este número de 8 dígitos: ${candidatos.join(', ')} — muy probablemente es la corrección de su DNI. Úsalo y vuelve a llamar a solicitar_cita con ese DNI de 8 dígitos, sin pedírselo otra vez.`
+              : ' Hazle notar al paciente la cantidad de dígitos y pídele que verifique su DNI (puede tener un dígito de más o de menos), luego vuelve a llamar a solicitar_cita con el DNI corregido.'),
         });
       }
       // Si este mismo paciente ya tiene una solicitud pendiente para esa fecha/hora,
