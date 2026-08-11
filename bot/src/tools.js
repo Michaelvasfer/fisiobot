@@ -51,11 +51,12 @@ const definiciones = [
     function: {
       name: 'registrar_lead',
       description:
-        'Registra o actualiza los datos del contacto. Úsala cuando identifiques el motivo principal y al menos un dato del paciente, y cuando cambie su nivel de interés.',
+        'Registra o actualiza los datos del contacto. Llámala EN EL MISMO TURNO cada vez que el paciente te dé un dato personal (nombre, DNI, ciudad) o el motivo de consulta: es la memoria permanente del paciente; si no la usas, en conversaciones largas esos datos se pierden y terminarías pidiéndolos de nuevo. Úsala también cuando cambie su nivel de interés.',
       parameters: {
         type: 'object',
         properties: {
-          nombre: { type: 'string' },
+          nombre: { type: 'string', description: 'Nombres y apellidos completos, cuando el paciente los dé' },
+          dni: { type: 'string', description: 'Número de DNI, cuando el paciente lo dé' },
           campania: { type: 'string', description: 'Campaña o anuncio de procedencia, si se conoce' },
           motivo: { type: 'string', description: 'Motivo principal de consulta' },
           ciudad: { type: 'string' },
@@ -428,14 +429,11 @@ async function ejecutar(nombre, args, ctx) {
     }
 
     case 'registrar_lead': {
-      store.guardarLead(telefono, {
-        nombre: args.nombre,
-        campania: args.campania,
-        motivo: args.motivo,
-        ciudad: args.ciudad,
-        nivel_interes: args.nivel_interes,
-        resumen: args.resumen,
-      });
+      // Solo campos definidos: pasar undefined borraría del JSON el dato ya guardado
+      // (p. ej. una llamada sin nombre eliminaría el nombre registrado antes).
+      const campos = ['nombre', 'dni', 'campania', 'motivo', 'ciudad', 'nivel_interes', 'resumen'];
+      const datos = Object.fromEntries(campos.filter((k) => args[k] !== undefined).map((k) => [k, args[k]]));
+      store.guardarLead(telefono, datos);
       if (args.campania) store.establecerCampania(telefono, args.campania);
       if (store.obtenerConversacion(telefono).estado === 'NUEVO') {
         store.establecerEstado(telefono, 'CALIFICANDO');

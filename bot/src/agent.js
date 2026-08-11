@@ -6,7 +6,7 @@ const { construirSystemPrompt } = require('./promptBuilder');
 const tools = require('./tools');
 
 const MAX_ITERACIONES_TOOLS = 5;
-const MENSAJES_HISTORIAL_OPENAI = 20; // solo los últimos N mensajes van a OpenAI (ahorro de tokens)
+const MENSAJES_HISTORIAL_OPENAI = 40; // solo los últimos N mensajes van a OpenAI (ahorro de tokens); los datos personales van además en el lead (registrar_lead)
 // Red determinística: texto que habla de horarios o disponibilidad. Si el modelo
 // responde algo así SIN haber llamado a consultar_disponibilidad en este turno
 // (p. ej. repitiendo una respuesta vieja del historial), se le obliga a verificar.

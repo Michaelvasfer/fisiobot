@@ -26,6 +26,23 @@ test('solicitar_cita rechaza datos con corchetes de plantilla sin registrar nada
   assert.strictEqual(store.listarCitas().length, 0);
 });
 
+// ─── registrar_lead como memoria permanente ───
+// Regresión: el bot olvidaba nombre/DNI en conversaciones largas porque el lead
+// no aceptaba dni y una llamada parcial (sin nombre) borraba el nombre guardado.
+
+test('registrar_lead guarda el DNI y una actualización parcial no borra datos previos', async () => {
+  const store = storeTemporal();
+  const tel = '51999000222';
+
+  await tools.ejecutar('registrar_lead', { nombre: 'María Rosa Quito', motivo: 'Hernia discal', nivel_interes: 'INTERES_MEDIO' }, { telefono: tel, store });
+  await tools.ejecutar('registrar_lead', { dni: '48430255', motivo: 'Hernia discal', nivel_interes: 'INTERES_ALTO' }, { telefono: tel, store });
+
+  const lead = store.obtenerLead(tel);
+  assert.strictEqual(lead.nombre, 'María Rosa Quito');
+  assert.strictEqual(lead.dni, '48430255');
+  assert.strictEqual(lead.nivel_interes, 'INTERES_ALTO');
+});
+
 // ─── consultar_disponibilidad con fecha + hora exactas ───
 // Regresión: el paciente pide "mañana a las 11" y el modelo solo veía las 2
 // primeras horas del día, concluyendo mal que ese horario no existía.
