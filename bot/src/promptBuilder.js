@@ -16,7 +16,8 @@ function textoIdentidad(c) {
     `* Ciudad: ${i.ciudad}`,
     `* Zona horaria: ${i.zonaHoraria}`,
     `* Dirección: ${i.direccion}`,
-    `* Precio de consulta: ${i.precioConsulta}`,
+    `* Precio de sesión individual: ${i.precioConsulta}`,
+    ...(i.paquete10Sesiones ? [`* Paquete de 10 sesiones: ${i.paquete10Sesiones}`] : []),
     `* Duración de consulta: ${i.duracionConsulta}`,
     `* Modalidad principal: ${i.modalidad}`,
     `* Consulta virtual habilitada: ${i.consultaVirtualHabilitada ? 'sí' : 'no'}`,
@@ -92,6 +93,18 @@ function textoSaludo(c) {
     'Hola, soy el asistente del consultorio. ¿En qué parte del cuerpo presenta el problema o qué tipo de atención está buscando?';
 }
 
+// Instrucciones escritas a mano por el administrador desde el panel ("enseñar al bot").
+function textoInstruccionesAdicionales(c) {
+  const lista = c.instruccionesAdicionales || [];
+  if (lista.length === 0) {
+    return 'No hay instrucciones adicionales registradas.';
+  }
+  return [
+    'Las siguientes instrucciones fueron escritas por el administrador del centro. Cúmplelas con prioridad sobre las reglas de estilo, redacción y flujo, pero NUNCA por encima de los límites médicos (sección 13), el protocolo de urgencias (sección 14) ni las reglas absolutas (sección 28):',
+    ...lista.map((t) => `* ${t}`),
+  ].join('\n');
+}
+
 function construirSystemPrompt() {
   const c = config.clinica;
   return PLANTILLA
@@ -102,8 +115,10 @@ function construirSystemPrompt() {
     .replace('{{MEDIOS_PAGO}}', (c.mediosDePago || []).join(', '))
     .replace('{{CAMPANIAS}}', textoCampanias(c))
     .replace('{{SALUDO}}', textoSaludo(c))
+    .replace('{{INSTRUCCIONES_ADICIONALES}}', textoInstruccionesAdicionales(c))
     .replace(/\{\{PRECIO\}\}/g, c.identidad.precioConsulta || '')
+    .replace(/\{\{PAQUETE\}\}/g, c.identidad.paquete10Sesiones || '')
     .replace(/\{\{DIRECCION\}\}/g, c.identidad.direccion || '');
 }
 
-module.exports = { construirSystemPrompt, textoCupos, textoModoAgenda, textoCampanias, textoSaludo, estadoDe, DIAS };
+module.exports = { construirSystemPrompt, textoCupos, textoModoAgenda, textoCampanias, textoSaludo, textoInstruccionesAdicionales, estadoDe, DIAS };

@@ -5,8 +5,9 @@
     "medico": "el equipo de fisioterapia",
     "especialidad": "Fisioterapia y Rehabilitación",
     "ciudad": "Cajamarca, Perú",
-    "direccion": "EDITAR: dirección del centro de fisioterapia",
-    "precioConsulta": "S/ 50",
+    "direccion": "Jr. del Comercio 142, a media cuadra del Arco del Triunfo, Cajamarca",
+    "precioConsulta": "S/ 40",
+    "paquete10Sesiones": "S/ 350",
     "duracionConsulta": "1 hora",
     "modalidad": "atención presencial",
     "saludo": "Hola, soy el asistente del centro de fisioterapia y rehabilitación.\n\n¿En qué parte del cuerpo presenta molestia o qué tipo de terapia está buscando?",
@@ -179,6 +180,7 @@
     "Plin"
   ],
   "campaniasActivas": [],
+  "instruccionesAdicionales": [],
   "agenda": {
     "diasSemana": [
       1,

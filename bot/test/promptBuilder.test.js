@@ -11,7 +11,8 @@ test('incluye los datos de identidad del centro', () => {
   const prompt = construirSystemPrompt();
   assert.ok(prompt.includes('Fisioterapia y Rehabilitación'));
   assert.ok(prompt.includes('Cajamarca'));
-  assert.ok(prompt.includes('S/ 50'));
+  assert.ok(prompt.includes('S/ 40'));
+  assert.ok(prompt.includes('Paquete de 10 sesiones: S/ 350'));
 });
 
 test('los cupos no van en el prompt (se obtienen con la herramienta) y el modo de agenda es manual', () => {
@@ -42,6 +43,19 @@ test('el saludo configurado se inyecta y no dice "asistente virtual" en el salud
   const prompt = construirSystemPrompt();
   assert.ok(prompt.includes('asistente del centro de fisioterapia'));
   assert.ok(!prompt.includes('Soy el asistente virtual del consultorio'));
+});
+
+test('las instrucciones adicionales del administrador se inyectan en el prompt', () => {
+  const { config } = require('../src/config');
+  const originales = config.clinica.instruccionesAdicionales;
+  config.clinica.instruccionesAdicionales = ['Responde primero el precio y después ofrece horarios'];
+  const prompt = construirSystemPrompt();
+  assert.ok(prompt.includes('INSTRUCCIONES ADICIONALES DEL ADMINISTRADOR'));
+  assert.ok(prompt.includes('Responde primero el precio y después ofrece horarios'));
+  assert.ok(prompt.includes('NUNCA por encima de los límites médicos'));
+  config.clinica.instruccionesAdicionales = [];
+  assert.ok(construirSystemPrompt().includes('No hay instrucciones adicionales registradas.'));
+  config.clinica.instruccionesAdicionales = originales;
 });
 
 test('campaña aparece con estado, precio y ofertas, sin cupos propios (pool único)', () => {

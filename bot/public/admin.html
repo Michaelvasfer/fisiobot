@@ -200,6 +200,14 @@
       <p class="ayuda">Separados por comas. El agente nunca inventará cuentas ni números.</p>
       <div class="fila"><input id="mediosDePago" placeholder="Efectivo, Yape, Plin" /></div>
     </section>
+
+    <section>
+      <h2>Enseñar al bot (instrucciones adicionales)</h2>
+      <p class="ayuda">Si el bot respondió algo mal, escribe aquí la regla correcta, <b>una instrucción por línea</b>, redactada como orden (ej.: "Cuando pregunten el precio, responde primero el precio y recién después ofrece horarios"). El bot las aplicará en todas las conversaciones nuevas y existentes. No uses esto para datos clínicos ni diagnósticos: el bot nunca las antepondrá a las reglas médicas.</p>
+      <div class="fila">
+        <textarea id="instruccionesAdicionales" rows="5" placeholder="Ej.: Al confirmar un horario, no repitas la disponibilidad; di directamente que queda agendado y pide nombre y DNI."></textarea>
+      </div>
+    </section>
   </main>
 
   <main id="vistaChats">
@@ -394,6 +402,7 @@
       document.getElementById('campanias').innerHTML = '';
       (config.campaniasActivas || []).forEach((camp) => agregarCampania(camp));
       document.getElementById('mediosDePago').value = (config.mediosDePago || []).join(', ');
+      document.getElementById('instruccionesAdicionales').value = (config.instruccionesAdicionales || []).join('\n');
     }
 
     function recolectar() {
@@ -420,7 +429,10 @@
 
       const mediosDePago = document.getElementById('mediosDePago').value.split(',').map((m) => m.trim()).filter(Boolean);
 
-      return { identidad, cuposDisponibles, mediosDePago, campaniasActivas };
+      const instruccionesAdicionales = document.getElementById('instruccionesAdicionales').value
+        .split('\n').map((t) => t.trim()).filter(Boolean);
+
+      return { identidad, cuposDisponibles, mediosDePago, campaniasActivas, instruccionesAdicionales };
     }
 
     async function guardar() {
