@@ -29,7 +29,7 @@ const definiciones = [
     function: {
       name: 'solicitar_cita',
       description:
-        'Registra la solicitud de cita después de que el paciente confirmó todos sus datos. Datos obligatorios del paciente: nombre y apellidos, DNI y teléfono (el teléfono se obtiene automáticamente del número que escribe: NO se lo pidas al paciente). En modo manual la cita queda pendiente de confirmación por recepción (NO confirmada). Si es una campaña, indica tipo_atencion=CAMPAÑA_MEDICA y el nombre de la campaña: se validará que la fecha sea la de la jornada y que la hora siga libre en el pool de horarios compartido.',
+        'Registra la solicitud de cita en cuanto el paciente eligió horario y dio sus datos (nombre y DNI suelen llegar juntos en un solo mensaje: extráelos y registra sin pedirlos de nuevo). Datos obligatorios del paciente: nombre y apellidos, DNI y teléfono (el teléfono se obtiene automáticamente del número que escribe: NO se lo pidas al paciente). En modo manual la cita queda pendiente de confirmación por recepción (NO confirmada). Si es una campaña, indica tipo_atencion=CAMPAÑA_MEDICA y el nombre de la campaña: se validará que la fecha sea la de la jornada y que la hora siga libre en el pool de horarios compartido.',
       parameters: {
         type: 'object',
         properties: {
