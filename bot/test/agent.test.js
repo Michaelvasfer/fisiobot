@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { sinEmojis, sinPreviewCalendario } = require('../src/agent');
+const { sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos } = require('../src/agent');
 
 test('sinEmojis elimina emojis comunes del consultorio', () => {
   assert.strictEqual(sinEmojis('Hola 👋 soy el asistente'), 'Hola soy el asistente');
@@ -30,4 +30,25 @@ test('sinPreviewCalendario evita que WhatsApp detecte fechas y horas', () => {
   const t2 = sinPreviewCalendario('Tengo cupo el martes 5 de agosto a las 10:30 a. m.');
   assert.ok(t2.includes('5\u200C de agosto'));
   assert.ok(t2.includes('10:30\u200C a. m.'));
+});
+
+// Regresión: la red de agenda obligaba a verificar el cupo incluso cuando el
+// modelo ya estaba pidiendo nombre/DNI para registrar, y eso lo metía en un
+// bucle ("Sí, tengo disponible... ¿me confirma su DNI?") sin registrar nunca.
+test('la red de agenda no se dispara cuando el modelo está pidiendo datos de registro', () => {
+  const pidiendoDatos = 'Sí, tengo disponible el miércoles, 12 de agosto a las 3:00 p. m. Para registrarla, ¿me confirma su DNI?';
+  assert.strictEqual(necesitaVerificacionAgenda(pidiendoDatos, false, false), false);
+  // Ofrecer horarios sin verificar sí se sigue bloqueando.
+  const ofreciendo = 'Tengo estas opciones: martes a las 8:00 a. m. o a las 9:00 a. m. ¿Cuál le acomoda?';
+  assert.strictEqual(necesitaVerificacionAgenda(ofreciendo, false, false), true);
+  // Si ya consultó la agenda en este turno, nunca se fuerza de nuevo.
+  assert.strictEqual(necesitaVerificacionAgenda(ofreciendo, true, false), false);
+});
+
+test('datosRegistroConocidos detecta nombre/DNI del lead y un DNI suelto en el mensaje', () => {
+  assert.deepStrictEqual(datosRegistroConocidos({ nombre: 'Jhakeli Chamán', dni: '73812033' }, 'gracias'), ['nombre "Jhakeli Chamán"', 'DNI 73812033']);
+  const soloMensaje = datosRegistroConocidos(null, '73812033');
+  assert.strictEqual(soloMensaje.length, 1);
+  assert.ok(soloMensaje[0].includes('73812033'));
+  assert.deepStrictEqual(datosRegistroConocidos(null, 'hola quiero una cita'), []);
 });

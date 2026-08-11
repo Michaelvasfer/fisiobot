@@ -11,8 +11,29 @@ const MENSAJES_HISTORIAL_OPENAI = 40; // solo los últimos N mensajes van a Open
 // responde algo así SIN haber llamado a consultar_disponibilidad en este turno
 // (p. ej. repitiendo una respuesta vieja del historial), se le obliga a verificar.
 const PATRON_HORARIOS = /disponibil|disponible|ocupad[ao]|a las \d{1,2}/i;
+// Texto que pide datos de registro (nombre/DNI): significa que el paciente ya
+// eligió un horario verificado. En esa fase NO se fuerza la verificación de
+// agenda: hacerlo metía al modelo en un bucle (verificaba el cupo una y otra
+// vez en vez de registrar la cita).
+const PIDE_DATOS_REGISTRO = /nombre completo|DNI/i;
 const MENSAJE_ERROR =
   'Disculpe, tuve un inconveniente técnico para responder. Derivaré su consulta a recepción para que continúe ayudándole por este mismo medio.';
+
+// ¿Hay que obligar al modelo a verificar la agenda antes de hablar de horarios?
+function necesitaVerificacionAgenda(textoFinal, consultoAgenda, correccionHecha) {
+  return !consultoAgenda && !correccionHecha && PATRON_HORARIOS.test(textoFinal) && !PIDE_DATOS_REGISTRO.test(textoFinal);
+}
+
+// Datos de registro que el paciente YA proporcionó: del lead persistido o del
+// último mensaje (un número suelto de 8 dígitos después de pedir el DNI ES el DNI).
+function datosRegistroConocidos(lead, contenidoUsuario) {
+  const datos = [];
+  if (lead && lead.nombre) datos.push(`nombre "${lead.nombre}"`);
+  if (lead && lead.dni) datos.push(`DNI ${lead.dni}`);
+  const dniVisible = (String(contenidoUsuario || '').match(/\b\d{8}\b/) || [])[0];
+  if (dniVisible && !(lead && lead.dni === dniVisible)) datos.push(`DNI ${dniVisible} (su último mensaje es ese número de 8 dígitos)`);
+  return datos;
+}
 
 let cliente = null;
 function obtenerCliente() {
@@ -66,6 +87,7 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
     let iteraciones = 0;
     let consultoAgenda = false;
     let correccionAgendaHecha = false;
+    let correccionRegistroHecha = false;
     // Historial temporal de esta llamada (incluye tool calls y sus resultados).
     const trabajo = [...mensajes];
 
@@ -85,7 +107,24 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
         // Red de seguridad: aunque el modelo desobedezca, al paciente no le llegan emojis
         // ni previews automáticos de calendario de WhatsApp.
         const textoFinal = sinPreviewCalendario(sinEmojis(mensaje.content));
-        if (!consultoAgenda && !correccionAgendaHecha && PATRON_HORARIOS.test(textoFinal)) {
+        // Red de REGISTRO: si pide nombre/DNI que el paciente ya dio (en el lead o en
+        // su último mensaje), se le obliga a registrar en vez de repreguntar.
+        if (PIDE_DATOS_REGISTRO.test(textoFinal) && !correccionRegistroHecha) {
+          const conocidos = datosRegistroConocidos(store.obtenerLead(telefono), contenidoUsuario);
+          if (conocidos.length > 0) {
+            correccionRegistroHecha = true;
+            console.warn(`[agente] ${telefono} pidió datos que ya tiene (${conocidos.join(', ')}); se le obliga a registrar.`);
+            trabajo.push({
+              role: 'system',
+              content:
+                `[Sistema: Estás pidiendo datos que el paciente YA proporcionó: ${conocidos.join(', ')}. ` +
+                'Reúne nombre completo, DNI, motivo, fecha y hora de la conversación y llama AHORA a solicitar_cita con esos datos reales. ' +
+                'No vuelvas a pedir nombre ni DNI, y no repitas la oferta de horario.]',
+            });
+            continue;
+          }
+        }
+        if (necesitaVerificacionAgenda(textoFinal, consultoAgenda, correccionAgendaHecha)) {
           correccionAgendaHecha = true;
           console.warn(`[agente] ${telefono} habló de horarios sin consultar la agenda; se le obliga a verificar.`);
           trabajo.push({
@@ -137,4 +176,4 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
   }
 }
 
-module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario };
+module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos };
