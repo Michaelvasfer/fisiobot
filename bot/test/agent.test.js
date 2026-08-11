@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos } = require('../src/agent');
+const { sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion } = require('../src/agent');
 
 test('sinEmojis elimina emojis comunes del consultorio', () => {
   assert.strictEqual(sinEmojis('Hola 👋 soy el asistente'), 'Hola soy el asistente');
@@ -51,4 +51,15 @@ test('datosRegistroConocidos detecta nombre/DNI del lead y un DNI suelto en el m
   assert.strictEqual(soloMensaje.length, 1);
   assert.ok(soloMensaje[0].includes('73812033'));
   assert.deepStrictEqual(datosRegistroConocidos(null, 'hola quiero una cita'), []);
+});
+
+// Regresión: el paciente dijo "Agéndame" y el modelo respondió otra vez
+// "¿Le gustaría agendar para esa hora?" en vez de registrar.
+test('esAceptacion reconoce aceptaciones del horario y no frases neutras', () => {
+  for (const t of ['Agendame', 'agéndame esa', 'Sí', 'si, está bien', 'dale', 'ok', 'Perfecto', 'me parece', 'quiero esa hora']) {
+    assert.ok(esAceptacion(t), `debería ser aceptación: ${t}`);
+  }
+  for (const t of ['no puedo', 'a qué hora es', 'cuánto cuesta', 'gracias', '']) {
+    assert.ok(!esAceptacion(t), `NO debería ser aceptación: ${t}`);
+  }
 });

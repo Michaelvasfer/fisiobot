@@ -16,6 +16,18 @@ const PATRON_HORARIOS = /disponibil|disponible|ocupad[ao]|a las \d{1,2}/i;
 // agenda: hacerlo metía al modelo en un bucle (verificaba el cupo una y otra
 // vez en vez de registrar la cita).
 const PIDE_DATOS_REGISTRO = /nombre completo|DNI/i;
+// El modelo vuelve a preguntar "¿le gustaría agendar?" aunque el paciente ya
+// aceptó ("agéndame", "sí", "dale"): la aceptación YA es la respuesta.
+const REPREGUNTA_AGENDAMIENTO = /¿[^?]*(gustaría agendar|desea agendar|le parece|qué le parece|desea que|le agendo|desea (la )?cita)/i;
+
+// ¿El mensaje del paciente es una aceptación del horario propuesto?
+function esAceptacion(texto) {
+  const t = String(texto || '').toLowerCase().trim();
+  if (/ag[eé]nd/.test(t)) return true;
+  const limpio = t.replace(/[.,!¡¿?]/g, '').replace(/\s+/g, ' ');
+  const frases = ['si', 'sí', 'ya', 'ok', 'okay', 'dale', 'listo', 'perfecto', 'vale', 'va', 'confirmo', 'de acuerdo', 'me parece', 'está bien', 'esta bien', 'quiero esa', 'esa hora', 'esa está bien', 'claro'];
+  return frases.some((f) => limpio === f || limpio.startsWith(f + ' '));
+}
 const MENSAJE_ERROR =
   'Disculpe, tuve un inconveniente técnico para responder. Derivaré su consulta a recepción para que continúe ayudándole por este mismo medio.';
 
@@ -88,6 +100,7 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
     let consultoAgenda = false;
     let correccionAgendaHecha = false;
     let correccionRegistroHecha = false;
+    let correccionAceptacionHecha = false;
     // Historial temporal de esta llamada (incluye tool calls y sus resultados).
     const trabajo = [...mensajes];
 
@@ -123,6 +136,20 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
             });
             continue;
           }
+        }
+        // Red de ACEPTACIÓN: si el paciente aceptó el horario y el modelo vuelve a
+        // preguntar si quiere agendar, se le obliga a avanzar al registro.
+        if (REPREGUNTA_AGENDAMIENTO.test(textoFinal) && esAceptacion(contenidoUsuario) && !correccionAceptacionHecha) {
+          correccionAceptacionHecha = true;
+          console.warn(`[agente] ${telefono} aceptó el horario y el modelo repreguntó si quiere agendar; se le obliga a registrar.`);
+          trabajo.push({
+            role: 'system',
+            content:
+              '[Sistema: El paciente YA aceptó el horario propuesto; su mensaje es una aceptación. PROHIBIDO preguntarle otra vez si desea agendar. ' +
+              'Avanza al registro AHORA: si el sistema te indicó sus datos registrados (paciente recurrente), llama a solicitar_cita con esos datos y la fecha/hora aceptada; ' +
+              'si te falta nombre completo o DNI, pídelos en una sola frase natural.]',
+          });
+          continue;
         }
         if (necesitaVerificacionAgenda(textoFinal, consultoAgenda, correccionAgendaHecha)) {
           correccionAgendaHecha = true;
@@ -176,4 +203,4 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
   }
 }
 
-module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos };
+module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion };
