@@ -16,7 +16,8 @@ function textoIdentidad(c) {
     `* Ciudad: ${i.ciudad}`,
     `* Zona horaria: ${i.zonaHoraria}`,
     `* Dirección: ${i.direccion}`,
-    `* Precio de sesión individual: ${i.precioConsulta}`,
+    `* Precio de la consulta (evaluación): ${i.precioConsulta}`,
+    ...(i.precioSesion ? [`* Precio de sesión individual: ${i.precioSesion}`] : []),
     ...(i.paquete10Sesiones ? [`* Paquete de 10 sesiones: ${i.paquete10Sesiones}`] : []),
     `* Duración de consulta: ${i.duracionConsulta}`,
     `* Modalidad principal: ${i.modalidad}`,
@@ -117,6 +118,7 @@ function construirSystemPrompt() {
     .replace('{{SALUDO}}', textoSaludo(c))
     .replace('{{INSTRUCCIONES_ADICIONALES}}', textoInstruccionesAdicionales(c))
     .replace(/\{\{PRECIO\}\}/g, c.identidad.precioConsulta || '')
+    .replace(/\{\{PRECIO_SESION\}\}/g, c.identidad.precioSesion || '')
     .replace(/\{\{PAQUETE\}\}/g, c.identidad.paquete10Sesiones || '')
     .replace(/\{\{DIRECCION\}\}/g, c.identidad.direccion || '');
 }

@@ -11,7 +11,8 @@ test('incluye los datos de identidad del centro', () => {
   const prompt = construirSystemPrompt();
   assert.ok(prompt.includes('Fisioterapia y Rehabilitación'));
   assert.ok(prompt.includes('Cajamarca'));
-  assert.ok(prompt.includes('S/ 40'));
+  assert.ok(prompt.includes('Precio de la consulta (evaluación): gratis (sin costo)'));
+  assert.ok(prompt.includes('Precio de sesión individual: S/ 40'));
   assert.ok(prompt.includes('Paquete de 10 sesiones: S/ 350'));
 });
 

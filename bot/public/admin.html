@@ -170,7 +170,8 @@
         <div class="fila"><label>Especialidad</label><input id="especialidad" /></div>
         <div class="fila"><label>Ciudad</label><input id="ciudad" /></div>
         <div class="fila"><label>Dirección</label><input id="direccion" /></div>
-        <div class="fila"><label>Precio de sesión individual</label><input id="precioConsulta" placeholder="S/ 40" /></div>
+        <div class="fila"><label>Precio de la consulta (evaluación)</label><input id="precioConsulta" placeholder="gratis (sin costo)" /></div>
+        <div class="fila"><label>Precio de sesión individual</label><input id="precioSesion" placeholder="S/ 40" /></div>
         <div class="fila"><label>Paquete de 10 sesiones</label><input id="paquete10Sesiones" placeholder="S/ 350" /></div>
         <div class="fila"><label>Duración de consulta</label><input id="duracionConsulta" placeholder="30 minutos" /></div>
         <div class="fila"><label>Modalidad</label><input id="modalidad" placeholder="atención presencial" /></div>
@@ -394,7 +395,7 @@
       if (!res.ok) { mensaje('No se pudo cargar la configuración', 'error'); return; }
       config = await res.json();
       const i = config.identidad || {};
-      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'paquete10Sesiones', 'duracionConsulta', 'modalidad', 'saludo']
+      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'precioSesion', 'paquete10Sesiones', 'duracionConsulta', 'modalidad', 'saludo']
         .forEach((k) => { document.getElementById(k).value = i[k] || ''; });
       document.getElementById('consultaVirtualHabilitada').checked = Boolean(i.consultaVirtualHabilitada);
       const contCupos = document.getElementById('cupos');
@@ -408,7 +409,7 @@
 
     function recolectar() {
       const identidad = { nombreAgente: config.identidad.nombreAgente, zonaHoraria: config.identidad.zonaHoraria };
-      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'paquete10Sesiones', 'duracionConsulta', 'modalidad', 'saludo']
+      ['medico', 'especialidad', 'ciudad', 'direccion', 'precioConsulta', 'precioSesion', 'paquete10Sesiones', 'duracionConsulta', 'modalidad', 'saludo']
         .forEach((k) => { identidad[k] = document.getElementById(k).value.trim(); });
       identidad.consultaVirtualHabilitada = document.getElementById('consultaVirtualHabilitada').checked;
 
