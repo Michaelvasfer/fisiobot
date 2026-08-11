@@ -330,11 +330,11 @@ async function ejecutar(nombre, args, ctx) {
       // éxito sin duplicar la cita (el modelo a veces reintenta el registro).
       const pendientePropia = agenda.citaPendienteEnCupo(store, telefono, args.fecha, args.hora);
       if (pendientePropia) {
-        const automatico = config.modoAgenda === 'automatico' && fisio.lista();
+        const yaAgendada = pendientePropia.estado === 'CONFIRMADA' || (config.modoAgenda === 'automatico' && fisio.lista());
         return JSON.stringify({
           exito: true,
-          pendienteDeConfirmacion: !automatico,
-          mensaje: automatico
+          pendienteDeConfirmacion: !yaAgendada,
+          mensaje: yaAgendada
             ? `Este paciente YA tiene la sesión agendada para el ${pendientePropia.fecha} a las ${pendientePropia.hora} (quedó registrada en la agenda). No la dupliques: confírmale con claridad que su sesión quedó agendada para esa fecha y hora (ej. "Su sesión quedó agendada para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. Le esperamos.").`
             : `Este paciente ya tiene una solicitud pendiente para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. No la dupliques: indícale que su solicitud sigue registrada y que recepción le confirmará por este mismo medio. No digas que está confirmada.`,
         });
@@ -404,6 +404,7 @@ async function ejecutar(nombre, args, ctx) {
       // registro crea paciente + cita ahí y se guarda una copia local con el id remoto.
       let fisioId = null;
       let codigoPaciente = null;
+      let registradoEnFisio = false;
       if (config.modoAgenda === 'automatico' && fisio.lista()) {
         if (!(await agenda.cupoValidoFisio(args.fecha, args.hora))) {
           return JSON.stringify({
@@ -418,6 +419,7 @@ async function ejecutar(nombre, args, ctx) {
           });
           fisioId = r.citaId || null;
           codigoPaciente = r.codigoPaciente || null;
+          registradoEnFisio = true;
         } catch (err) {
           return JSON.stringify({
             exito: false,
@@ -445,7 +447,15 @@ async function ejecutar(nombre, args, ctx) {
         // al id de la cita en la agenda remota (hoy KaminarFisio).
         ...(fisioId ? { kaminarId: fisioId } : {}),
       });
-      store.establecerEstado(telefono, 'CITA_SOLICITADA');
+      // Si la cita ya existe en la agenda real (modo automático), la copia local
+      // queda CONFIRMADA de una vez — igual que la rama de campaña — para que el
+      // panel la muestre como agendada y no como "por confirmar".
+      if (registradoEnFisio) {
+        store.actualizarCita(cita.id, { estado: 'CONFIRMADA' });
+        store.establecerEstado(telefono, 'CITA_CONFIRMADA');
+      } else {
+        store.establecerEstado(telefono, 'CITA_SOLICITADA');
+      }
       store.guardarLead(telefono, { nombre: args.nombre, dni: args.dni, motivo, nivel_interes: 'INTERES_ALTO' });
       await whatsapp.notificarRecepcion(
         [

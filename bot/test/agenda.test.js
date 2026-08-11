@@ -296,9 +296,11 @@ test('citaPendienteEnCupo reconoce la reserva pendiente del mismo paciente', () 
     // Otro cupo u otro teléfono: no.
     assert.strictEqual(agenda.citaPendienteEnCupo(store, '51999000111', LUNES.texto, '5:00 p. m.'), null);
     assert.strictEqual(agenda.citaPendienteEnCupo(store, '51900000000', LUNES.texto, '4:00 p. m.'), null);
-    // Una vez confirmada, ya no es "pendiente".
+    // Una cita CONFIRMADA también cuenta: es la reserva del mismo paciente y el
+    // anti-duplicado de solicitar_cita debe reconocerla (modo automático las
+    // marca CONFIRMADA de una vez).
     store.actualizarCita(cita.id, { estado: 'CONFIRMADA' });
-    assert.strictEqual(agenda.citaPendienteEnCupo(store, '51999000111', LUNES.texto, '4:00 p. m.'), null);
+    assert.strictEqual(agenda.citaPendienteEnCupo(store, '51999000111', LUNES.texto, '4:00 p. m.').id, cita.id);
   } finally {
     restaurar();
   }

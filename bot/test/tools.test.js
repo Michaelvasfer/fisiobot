@@ -165,6 +165,15 @@ test('solicitar_cita no duplica la solicitud pendiente del mismo paciente y cupo
     assert.strictEqual(segundo.exito, true);
     assert.match(segundo.mensaje, /No la dupliques/);
     assert.strictEqual(store.listarCitas().length, 1);
+
+    // Con la cita ya CONFIRMADA (modo automático la marca así), el anti-duplicado
+    // sigue atajando el reintento y el mensaje dice que ya quedó agendada.
+    store.actualizarCita(store.listarCitas()[0].id, { estado: 'CONFIRMADA' });
+    const tercero = JSON.parse(await tools.ejecutar('solicitar_cita', args, ctx));
+    assert.strictEqual(tercero.exito, true);
+    assert.match(tercero.mensaje, /No la dupliques/);
+    assert.match(tercero.mensaje, /quedó agendada/);
+    assert.strictEqual(store.listarCitas().length, 1);
   } finally {
     restaurar();
   }

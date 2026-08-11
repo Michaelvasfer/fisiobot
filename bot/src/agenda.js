@@ -307,14 +307,15 @@ function cupoValido(fecha, hora, store) {
   return !cupoOcupado(store, fecha, hora);
 }
 
-// La cita PENDIENTE_CONFIRMACION de este teléfono en esa fecha/hora, si existe.
-// Sirve para que solicitar_cita no rechace (ni duplique) el registro cuando el
-// modelo lo reintenta: la reserva que "ocupa" el cupo es del mismo paciente.
+// La cita activa (PENDIENTE_CONFIRMACION o CONFIRMADA) de este teléfono en esa
+// fecha/hora, si existe. Sirve para que solicitar_cita no rechace (ni duplique)
+// el registro cuando el modelo lo reintenta: la reserva que "ocupa" el cupo es
+// del mismo paciente.
 function citaPendienteEnCupo(store, telefono, fecha, hora) {
   return store.listarCitas().find(
     (c) =>
       c.telefono === telefono &&
-      c.estado === 'PENDIENTE_CONFIRMACION' &&
+      (c.estado === 'PENDIENTE_CONFIRMACION' || c.estado === 'CONFIRMADA') &&
       mismaFecha(c.fecha, fecha) &&
       normalizarHora(c.hora) === normalizarHora(hora)
   ) || null;
