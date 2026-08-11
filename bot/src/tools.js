@@ -291,6 +291,17 @@ async function ejecutar(nombre, args, ctx) {
           error: 'Faltan datos obligatorios del paciente. Pide y confirma sus nombres y apellidos completos y su número de DNI antes de registrar (el teléfono se obtiene automáticamente, no lo pidas).',
         });
       }
+      // El DNI peruano tiene exactamente 8 dígitos. El modelo no cuenta dígitos de
+      // forma confiable, así que la validación es determinística: si llega un número
+      // con otra cantidad, se rechaza y se pide al paciente que lo verifique.
+      // (Solo aplica a DNI puro numérico; un carné de extranjería con letras pasa.)
+      const dniTexto = String(args.dni).trim();
+      if (/^\d+$/.test(dniTexto) && dniTexto.length !== 8) {
+        return JSON.stringify({
+          exito: false,
+          error: `El DNI recibido ("${dniTexto}") tiene ${dniTexto.length} dígitos y el DNI peruano tiene exactamente 8. NO lo registres así: hazle notar al paciente la cantidad de dígitos y pídele que verifique su DNI (puede tener un dígito de más o de menos), luego vuelve a llamar a solicitar_cita con el DNI corregido.`,
+        });
+      }
       // Si este mismo paciente ya tiene una solicitud pendiente para esa fecha/hora,
       // no es un conflicto: la reserva que "ocupa" el cupo es la suya. Responder
       // éxito sin duplicar la cita (el modelo a veces reintenta el registro).

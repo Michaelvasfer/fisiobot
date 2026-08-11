@@ -26,6 +26,20 @@ test('solicitar_cita rechaza datos con corchetes de plantilla sin registrar nada
   assert.strictEqual(store.listarCitas().length, 0);
 });
 
+test('solicitar_cita rechaza un DNI que no tiene 8 dígitos y se lo hace notar', async () => {
+  const store = storeTemporal();
+  for (const dni of ['738120333', '7381234']) {
+    const resultado = JSON.parse(await tools.ejecutar('solicitar_cita', {
+      nombre: 'Jhakeli Chamán Guevara', dni, motivo: 'Dolor de espalda',
+      fecha: 'miércoles 12 de agosto', hora: '3:00 p. m.', tipo_atencion: 'CONSULTA_MEDICA',
+    }, { telefono: '51999000333', store }));
+    assert.strictEqual(resultado.exito, false);
+    assert.match(resultado.error, /exactamente 8/);
+    assert.match(resultado.error, /verifique/);
+  }
+  assert.strictEqual(store.listarCitas().length, 0);
+});
+
 // ─── registrar_lead como memoria permanente ───
 // Regresión: el bot olvidaba nombre/DNI en conversaciones largas porque el lead
 // no aceptaba dni y una llamada parcial (sin nombre) borraba el nombre guardado.
