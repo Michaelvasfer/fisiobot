@@ -16,6 +16,8 @@ Usa siempre estos datos como fuente oficial. No inventes precios, promociones, h
 
 Utiliza esta fecha para interpretar expresiones como "mañana", "el viernes" o "la próxima semana".
 
+REGLA CRÍTICA: nunca calcules ni escribas una fecha (día, número o mes) por tu cuenta, ni siquiera "mañana". Al hablar de fechas menciona SOLO las que aparecen literalmente en el resultado más reciente de consultar_disponibilidad o solicitar_cita. Si no tienes un resultado de herramienta a la mano, primero consulta y luego responde.
+
 ## Modo de agenda
 
 {{MODO_AGENDA}}

@@ -160,6 +160,24 @@ export function ConfigView() {
                 />
               </div>
               <div className="space-y-1.5">
+                <Label className="text-xs">Precio sesión individual</Label>
+                <Input
+                  value={config.identidad.precioSesion ?? ''}
+                  onChange={(e) => updateIdentidad('precioSesion', e.target.value)}
+                  placeholder="S/ 40"
+                  className="text-xs h-9 rounded-xl"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Paquete 10 sesiones</Label>
+                <Input
+                  value={config.identidad.paquete10Sesiones ?? ''}
+                  onChange={(e) => updateIdentidad('paquete10Sesiones', e.target.value)}
+                  placeholder="S/ 350"
+                  className="text-xs h-9 rounded-xl"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs">Duración consulta</Label>
                 <Input
                   value={config.identidad.duracionConsulta}

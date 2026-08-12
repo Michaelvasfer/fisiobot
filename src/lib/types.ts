@@ -86,6 +86,8 @@ export interface ClinicaConfig {
     zonaHoraria: string
     direccion: string
     precioConsulta: string
+    precioSesion?: string
+    paquete10Sesiones?: string
     duracionConsulta: string
     modalidad: string
     consultaVirtualHabilitada: boolean
