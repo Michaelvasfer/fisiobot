@@ -52,7 +52,16 @@ app.get('/webhook', (req, res) => {
   return res.sendStatus(403);
 });
 
-app.get('/health', (_req, res) => res.json({ ok: true, modoAgenda: config.modoAgenda }));
+// Diagnóstico: incluye la fecha/hora del servidor en la zona del consultorio.
+// Si "mañana" se resuelve mal, aquí se ve si el reloj del servidor está corrido.
+app.get('/health', (_req, res) => {
+  const ahora = new Intl.DateTimeFormat('es-PE', {
+    timeZone: config.clinica.identidad.zonaHoraria || 'America/Lima',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).format(new Date());
+  res.json({ ok: true, modoAgenda: config.modoAgenda, fechaHoraConsultorio: ahora, relojServidorUTC: new Date().toISOString() });
+});
 
 // --- Recepción de mensajes ---
 app.post('/webhook', (req, res) => {
