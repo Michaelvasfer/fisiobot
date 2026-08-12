@@ -106,7 +106,7 @@ const definiciones = [
           motivo_derivacion: { type: 'string', description: 'Por qué se deriva (presupuesto, paciente operado, queja, etc.)' },
           resumen: {
             type: 'object',
-            description: 'Resumen del paciente según la sección 17 del prompt',
+            description: 'Resumen breve del paciente, su solicitud y el motivo de la derivación',
             properties: {
               nombre: { type: 'string' },
               edad: { type: 'string' },

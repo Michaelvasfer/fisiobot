@@ -113,7 +113,7 @@ function construirSystemPrompt() {
     .replace('{{FECHA_ACTUAL}}', fechaActualTexto())
     .replace('{{CUPOS}}', textoCupos(c))
     .replace('{{MODO_AGENDA}}', textoModoAgenda(config.modoAgenda))
-    .replace('{{MEDIOS_PAGO}}', (c.mediosDePago || []).join(', '))
+    .replace(/\{\{MEDIOS_PAGO\}\}/g, (c.mediosDePago || []).join(', '))
     .replace('{{CAMPANIAS}}', textoCampanias(c))
     .replace('{{SALUDO}}', textoSaludo(c))
     .replace('{{INSTRUCCIONES_ADICIONALES}}', textoInstruccionesAdicionales(c))

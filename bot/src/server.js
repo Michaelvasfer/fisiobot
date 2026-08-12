@@ -88,7 +88,7 @@ function contextoCampania(mensaje) {
   const partes = ['El paciente llega desde un anuncio de Facebook/Instagram.'];
   if (ref.headline) partes.push(`Título del anuncio: "${ref.headline}".`);
   if (ref.body) partes.push(`Texto del anuncio: "${ref.body}".`);
-  partes.push('Identifica la campaña y adapta el saludo según la sección 7.');
+  partes.push('Identifica la campaña y adapta el saludo a su tema, usando exclusivamente los datos configurados de esa campaña.');
   return partes.join(' ');
 }
 
@@ -206,15 +206,15 @@ async function procesarMensajeEntrante(mensaje, value) {
       if (respuesta) await responderHumano(telefono, respuesta);
       return;
     }
-    // Si falla la transcripción, cae al aviso clásico de la sección 22.
+    // Si falla la transcripción, cae en el aviso genérico de audio no legible.
   }
 
-  // 4) Contenido no textual: responder según la sección 22 del prompt.
+  // 4) Contenido no textual: avisos auto-contenidos (el prompt no usa números de sección).
   if (mensaje.type !== 'text') {
     const avisos = {
-      audio: 'El paciente envió un audio que no se puede transcribir. Responde con el mensaje de audios de la sección 22.',
-      image: 'El paciente envió una imagen (posiblemente un estudio o fotografía). Agradécela según la sección 22; no la interpretes ni diagnostiques.',
-      document: 'El paciente envió un documento (posiblemente un informe o estudio). Agradécelo según la sección 22; no lo interpretes.',
+      audio: 'El paciente envió un audio que no se puede transcribir. Pídele con tus palabras que escriba brevemente su consulta por texto.',
+      image: 'El paciente envió una imagen (posiblemente un estudio o fotografía). Agradécela: puede servir como información de apoyo, pero no la interpretes ni diagnostiques; la evaluación presencial es necesaria.',
+      document: 'El paciente envió un documento (posiblemente un informe o estudio). Agradécelo: puede servir como información de apoyo, pero no lo interpretes; la evaluación presencial es necesaria.',
       video: 'El paciente envió un video. Indica que no puedes ver videos y pide que escriba su consulta.',
       sticker: 'El paciente envió un sticker. Continúa la conversación normalmente.',
       location: 'El paciente compartió su ubicación. Agradécela y continúa la conversación.',
