@@ -179,6 +179,38 @@ test('solicitar_cita no duplica la solicitud pendiente del mismo paciente y cupo
   }
 });
 
+// Regresión: el paciente pidió "cita mañana 3pm" y luego "cita mañana 5pm" y el
+// bot le agendó DOS veces el mismo día. solicitar_cita debe rechazar la segunda.
+test('solicitar_cita rechaza una segunda cita el mismo día a otra hora', async () => {
+  const restaurar = conPlantillaDePrueba();
+  try {
+    const store = storeTemporal();
+    const disp = await agenda.consultarDisponibilidad(store);
+    const dia = disp.cupos[0];
+    const ctx = { telefono: '51999000777', store };
+    const base = { nombre: 'Michael Vásquez', dni: '44681550', motivo: 'Test', tipo_atencion: 'CONSULTA_MEDICA' };
+
+    const primera = JSON.parse(await tools.ejecutar('solicitar_cita', { ...base, fecha: dia.fecha, hora: dia.horas[0] }, ctx));
+    assert.strictEqual(primera.exito, true);
+
+    const segunda = JSON.parse(await tools.ejecutar('solicitar_cita', { ...base, fecha: dia.fecha, hora: dia.horas[1] }, ctx));
+    assert.strictEqual(segunda.exito, false);
+    assert.ok(segunda.cita_existente_mismo_dia);
+    assert.match(segunda.error, /cambiarla al nuevo horario/);
+    assert.strictEqual(store.listarCitas().length, 1);
+
+    // Otro día sí se permite (paquetes de sesiones).
+    const dia2 = disp.cupos[1];
+    if (dia2) {
+      const otraFecha = JSON.parse(await tools.ejecutar('solicitar_cita', { ...base, fecha: dia2.fecha, hora: dia2.horas[0] }, ctx));
+      assert.strictEqual(otraFecha.exito, true);
+      assert.strictEqual(store.listarCitas().length, 2);
+    }
+  } finally {
+    restaurar();
+  }
+});
+
 // Regresión: el paciente pidió "para mañana" y el bot dijo "para mañana no
 // tengo disponibilidad" mientras ofrecía cupos de mañana. Cuando la fecha
 // pedida SÍ tiene cupos, la herramienta debe afirmarlo explícitamente.

@@ -339,6 +339,24 @@ async function ejecutar(nombre, args, ctx) {
             : `Este paciente ya tiene una solicitud pendiente para el ${pendientePropia.fecha} a las ${pendientePropia.hora}. No la dupliques: indícale que su solicitud sigue registrada y que recepción le confirmará por este mismo medio. No digas que está confirmada.`,
         });
       }
+      // Otra cita activa del mismo paciente en la MISMA fecha pero a OTRA hora:
+      // no registrar una segunda sin aclarar (casi siempre quiere CAMBIAR la hora,
+      // no tener dos citas el mismo día). Citas en fechas distintas sí se permiten
+      // (paquetes de sesiones).
+      const otraMismoDia = store.listarCitas().find(
+        (c) =>
+          c.telefono === telefono &&
+          (c.estado === 'PENDIENTE_CONFIRMACION' || c.estado === 'CONFIRMADA') &&
+          agenda.mismaFecha(c.fecha, args.fecha) &&
+          agenda.normalizarHora(c.hora) !== agenda.normalizarHora(args.hora)
+      );
+      if (otraMismoDia) {
+        return JSON.stringify({
+          exito: false,
+          cita_existente_mismo_dia: `${otraMismoDia.fecha} a las ${otraMismoDia.hora}`,
+          error: `El paciente YA tiene una cita el ${otraMismoDia.fecha} a las ${otraMismoDia.hora}. NO registres una segunda cita el mismo día. Pregúntale si desea conservar la que tiene o cambiarla al nuevo horario; si quiere cambiarla, reprograma: ejecuta cancelar_cita y luego solicitar_cita con el nuevo horario.`,
+        });
+      }
       const esCampania = args.tipo_atencion === 'CAMPAÑA_MEDICA' && args.campania;
       // El motivo no es obligatorio: si el paciente no lo mencionó, se registra así.
       const motivo = args.motivo || 'Consulta general';
