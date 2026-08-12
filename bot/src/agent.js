@@ -20,6 +20,14 @@ const PIDE_DATOS_REGISTRO = /nombre completo|DNI/i;
 // aceptó ("agéndame", "sí", "dale"): la aceptación YA es la respuesta.
 const REPREGUNTA_AGENDAMIENTO = /¿[^?]*(gustaría agendar|desea agendar|le parece|qué le parece|desea que|le agendo|desea (la )?cita)/i;
 
+// El paciente pregunta el precio y el modelo responde solo con horarios.
+function esPreguntaDePrecio(texto) {
+  return /cu[aá]nto|costo|precio|valor|tarifa/i.test(String(texto || ''));
+}
+function mencionaPrecio(texto) {
+  return /s\/|soles|gratis|gratuit|cuesta|costo|precio|paquete/i.test(String(texto || ''));
+}
+
 // ¿El mensaje del paciente es una aceptación del horario propuesto?
 function esAceptacion(texto) {
   const t = String(texto || '').toLowerCase().trim();
@@ -101,6 +109,7 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
     let correccionAgendaHecha = false;
     let correccionRegistroHecha = false;
     let correccionAceptacionHecha = false;
+    let correccionPrecioHecha = false;
     // Historial temporal de esta llamada (incluye tool calls y sus resultados).
     const trabajo = [...mensajes];
 
@@ -136,6 +145,24 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
             });
             continue;
           }
+        }
+        // Red de PRECIO: si el paciente preguntó el costo y el modelo responde solo
+        // con horarios (sin mencionar precio), se le obliga a responder el precio.
+        if (
+          esPreguntaDePrecio(contenidoUsuario) &&
+          PATRON_HORARIOS.test(textoFinal) &&
+          !mencionaPrecio(textoFinal) &&
+          !correccionPrecioHecha
+        ) {
+          correccionPrecioHecha = true;
+          console.warn(`[agente] ${telefono} preguntó el precio y el modelo respondió solo con horarios; se le obliga a responder el precio.`);
+          trabajo.push({
+            role: 'system',
+            content:
+              '[Sistema: El paciente preguntó el PRECIO/COSTO y tu respuesta solo ofrece horarios. Responde PRIMERO el precio con los datos oficiales de la sección 1 ' +
+              '(evaluación funcional, sesión individual y paquete de 10 sesiones) y solo después, si es natural, retoma el horario ya ofrecido.]',
+          });
+          continue;
         }
         // Red de ACEPTACIÓN: si el paciente aceptó el horario y el modelo vuelve a
         // preguntar si quiere agendar, se le obliga a avanzar al registro.
@@ -203,4 +230,4 @@ async function procesarMensaje(telefono, texto, store, contextoExtra) {
   }
 }
 
-module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion };
+module.exports = { procesarMensaje, sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion, esPreguntaDePrecio, mencionaPrecio };

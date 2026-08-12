@@ -60,7 +60,18 @@ app.get('/health', (_req, res) => {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
   }).format(new Date());
-  res.json({ ok: true, modoAgenda: config.modoAgenda, fechaHoraConsultorio: ahora, relojServidorUTC: new Date().toISOString() });
+  const i = config.clinica.identidad || {};
+  res.json({
+    ok: true,
+    modoAgenda: config.modoAgenda,
+    fechaHoraConsultorio: ahora,
+    relojServidorUTC: new Date().toISOString(),
+    // Diagnóstico de config: si falta un precio, el bot responde con huecos.
+    precioConsulta: i.precioConsulta || null,
+    precioSesion: i.precioSesion || null,
+    paquete10Sesiones: i.paquete10Sesiones || null,
+    direccion: i.direccion || null,
+  });
 });
 
 // --- Recepción de mensajes ---

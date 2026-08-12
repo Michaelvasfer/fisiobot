@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion } = require('../src/agent');
+const { sinEmojis, sinPreviewCalendario, necesitaVerificacionAgenda, datosRegistroConocidos, esAceptacion, esPreguntaDePrecio, mencionaPrecio } = require('../src/agent');
 
 test('sinEmojis elimina emojis comunes del consultorio', () => {
   assert.strictEqual(sinEmojis('Hola 👋 soy el asistente'), 'Hola soy el asistente');
@@ -51,6 +51,20 @@ test('datosRegistroConocidos detecta nombre/DNI del lead y un DNI suelto en el m
   assert.strictEqual(soloMensaje.length, 1);
   assert.ok(soloMensaje[0].includes('73812033'));
   assert.deepStrictEqual(datosRegistroConocidos(null, 'hola quiero una cita'), []);
+});
+
+// Regresión: el paciente preguntó "Cuánto está la terapia" / "Costo" y el bot
+// respondió "Sí, tengo disponible el miércoles..." sin dar el precio.
+test('detección de pregunta de precio y de respuesta sin precio', () => {
+  for (const t of ['Cuánto está la terapia', 'Costo', '¿cuál es el precio?', 'cuanto vale la sesión']) {
+    assert.ok(esPreguntaDePrecio(t), `debería detectar pregunta de precio: ${t}`);
+  }
+  for (const t of ['quiero una cita', 'me duele la espalda', 'mañana a las 3']) {
+    assert.ok(!esPreguntaDePrecio(t), `NO es pregunta de precio: ${t}`);
+  }
+  assert.ok(mencionaPrecio('La sesión cuesta S/ 40 y el paquete S/ 350'));
+  assert.ok(mencionaPrecio('La evaluación es gratuita'));
+  assert.ok(!mencionaPrecio('Sí, tengo disponible el miércoles a las 8:00 a. m.'));
 });
 
 // Regresión: el paciente dijo "Agéndame" y el modelo respondió otra vez
